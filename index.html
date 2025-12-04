@@ -1631,12 +1631,17 @@
           // Create speech config using the authorization token
           const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
           speechConfig.speechSynthesisLanguage = "en-US";
-          speechConfig.speechSynthesisVoiceName = "en-US-AvaMultilingualNeural";
+          // Use a voice that works well with the lisa avatar for lip-sync
+          speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
 
           // Avatar config - using lisa with casual-sitting style
+          // Available avatars: lisa, jenny, aria, guy, harry, etc.
+          // Available styles: casual-sitting, graceful-sitting, technical-sitting, etc.
           const avatarConfig = new sdk.AvatarConfig("lisa", "casual-sitting");
-          avatarConfig.backgroundColor = '#FFFFFFFF';
+          avatarConfig.backgroundColor = '#FFFFFFFF'; // White background
           avatarConfig.customized = false;
+          
+          console.log('🎭 Avatar: Config - character: lisa, style: casual-sitting, voice: en-US-JennyNeural');
           
           // Setup WebRTC peer connection with ICE servers from Azure relay
           const iceServerUrl = iceInfo.Urls[0];
@@ -1704,6 +1709,36 @@
           console.log('🎭 Avatar: Creating AvatarSynthesizer...');
           avatarSynthesizer = new sdk.AvatarSynthesizer(speechConfig, avatarConfig);
           
+          // Add event listeners for avatar speech synthesis
+          avatarSynthesizer.avatarEventReceived = (s, e) => {
+            console.log('🎭 Avatar Event:', e.description);
+            // Avatar events include: AvatarStarted, TalkingStarted, TalkingEnded, etc.
+            if (e.description.includes('TalkingStarted')) {
+              console.log('🎭 Avatar: Started talking (lip-sync active)');
+              setAISpeaking(true);
+              avatarStatus.textContent = 'Speaking...';
+            } else if (e.description.includes('TalkingStopped') || e.description.includes('TalkingEnded')) {
+              console.log('🎭 Avatar: Stopped talking');
+              setAISpeaking(false);
+              avatarStatus.textContent = 'Ready';
+            }
+          };
+          
+          avatarSynthesizer.synthesisStarted = (s, e) => {
+            console.log('🎭 Avatar: Synthesis started');
+            setAISpeaking(true);
+          };
+          
+          avatarSynthesizer.synthesisCompleted = (s, e) => {
+            console.log('🎭 Avatar: Synthesis completed');
+            // Don't immediately stop - wait for TalkingStopped event
+          };
+          
+          avatarSynthesizer.wordBoundary = (s, e) => {
+            // This fires for each word - indicates lip-sync is working
+            console.log('🎭 Avatar: Word boundary -', e.text);
+          };
+          
           console.log('🎭 Avatar: Starting avatar async...');
           const result = await avatarSynthesizer.startAvatarAsync(peerConnection);
           console.log('🎭 Avatar: startAvatarAsync result:', result);
@@ -1761,31 +1796,84 @@
       }
 
       async function speakWithAvatar(text) {
-        if (avatarSynthesizer) {
-          if (avatarAudio.srcObject && audioUnlocked) {
-            avatarAudio.muted = false;
-            avatarAudio.volume = 1.0;
-            avatarAudio.play().catch(e => {});
-          }
+        console.log('🎭➡️ speakWithAvatar called with:', text.substring(0, 60) + '...');
+        
+        // If avatar is not connected, use TTS fallback
+        if (!avatarSynthesizer) {
+          console.log('⚠️🔄 SWITCH TO TTS: No avatar synthesizer available');
+          console.log('📢 Reason: avatarSynthesizer is null/undefined');
+          showToast('Using audio-only mode (no avatar)', 2000);
+          await speakWithTTS(text);
+          return;
+        }
 
-          try {
-            avatarStatus.textContent = 'Speaking...';
-            setAISpeaking(true);
-            
-            const result = await avatarSynthesizer.speakTextAsync(text);
-            
-            setAISpeaking(false);
-            if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+        // Check if peer connection is still connected
+        if (!peerConnection || peerConnection.connectionState === 'closed' || 
+            peerConnection.connectionState === 'failed') {
+          console.log('⚠️🔄 SWITCH TO TTS: Peer connection not ready');
+          console.log('📢 Reason: peerConnection state =', peerConnection?.connectionState || 'null');
+          showToast('Avatar disconnected, using audio', 2000);
+          await speakWithTTS(text);
+          return;
+        }
+
+        console.log('✅ Avatar ready - using avatar for speech');
+        console.log('📊 PeerConnection state:', peerConnection.connectionState);
+        console.log('📊 ICE connection state:', peerConnection.iceConnectionState);
+
+        // Ensure audio is playing
+        if (avatarAudio.srcObject && audioUnlocked) {
+          avatarAudio.muted = false;
+          avatarAudio.volume = 1.0;
+          avatarAudio.play().catch(e => console.log('Audio play issue:', e));
+        }
+
+        try {
+          avatarStatus.textContent = 'Speaking...';
+          setAISpeaking(true);
+          console.log('🎭 Avatar: Calling speakTextAsync...');
+          
+          // Try plain text first - sometimes works better for lip-sync
+          const result = await avatarSynthesizer.speakTextAsync(text);
+          
+          console.log('🎭 Avatar: Speak result reason:', result.reason);
+          
+          if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+            console.log('✅🎭 Avatar speech completed successfully - NO TTS FALLBACK');
+            // Let the avatarEventReceived handler manage the speaking state
+            // Add a small delay then check if still speaking
+            setTimeout(() => {
+              setAISpeaking(false);
               avatarStatus.textContent = 'Ready';
-              return;
-            }
-          } catch (error) {
+            }, 500);
+            return;
+          } else if (result.reason === sdk.ResultReason.Canceled) {
+            const cancellation = sdk.CancellationDetails.fromResult(result);
+            console.error('❌🎭 Avatar: Speech canceled -', cancellation.reason, cancellation.errorDetails);
+            console.log('⚠️🔄 SWITCH TO TTS: Avatar speech was canceled');
+            console.log('📢 Cancellation reason:', cancellation.reason);
+            console.log('📢 Error details:', cancellation.errorDetails);
             setAISpeaking(false);
             avatarStatus.textContent = 'Error';
+            showToast('Avatar error, using audio', 2000);
+            await speakWithTTS(text);
+          } else {
+            // Other result - might still be working
+            console.log('🎭 Avatar: Unexpected result reason:', result.reason, '- assuming success');
+            setTimeout(() => {
+              setAISpeaking(false);
+              avatarStatus.textContent = 'Ready';
+            }, 500);
           }
+        } catch (error) {
+          console.error('❌🎭 Avatar: speakTextAsync threw exception:', error.message);
+          console.log('⚠️🔄 SWITCH TO TTS: Avatar threw an error');
+          console.log('📢 Error:', error);
+          setAISpeaking(false);
+          avatarStatus.textContent = 'Error';
+          showToast('Avatar error, using audio', 2000);
+          await speakWithTTS(text);
         }
-        
-        await speakWithTTS(text);
       }
 
       // Regular TTS fallback
@@ -1793,6 +1881,8 @@
       let isSpeaking = false;
       
       async function speakWithTTS(text) {
+        console.log('🔊📢 speakWithTTS called - AUDIO ONLY MODE');
+        console.log('🔊 Text:', text.substring(0, 60) + '...');
         showToast('🔊 AI is speaking...');
         isSpeaking = true;
         setAISpeaking(true);
