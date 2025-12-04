@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Intelligence - Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --border-color: #334155;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: #475569;
+    }
+
+    /* Main Layout */
+    .main-container {
+      display: flex;
+      min-height: calc(100vh - 73px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      padding: 24px 16px;
+    }
+
+    .nav-section {
+      margin-bottom: 32px;
+    }
+
+    .nav-section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      padding-left: 12px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--primary);
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      padding: 32px;
+      overflow-y: auto;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .stat-change {
+      font-size: 13px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-change.positive {
+      color: var(--success);
+    }
+
+    .stat-change.negative {
+      color: var(--danger);
+    }
+
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .chart-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    .chart-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+    }
+
+    /* Invite Management */
+    .invite-panel {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 32px;
+      padding: 24px;
+    }
+
+    .invite-panel-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .invite-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .form-input {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn-generate {
+      align-self: flex-end;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-generate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .invites-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .invite-item {
+      display: grid;
+      grid-template-columns: 100px 1fr 1fr auto auto auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .invite-code {
+      font-family: 'Consolas', monospace;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary);
+      background: rgba(59, 130, 246, 0.15);
+      padding: 8px 12px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .invite-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .invite-name {
+      font-weight: 500;
+    }
+
+    .invite-email {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .invite-position {
+      color: var(--text-secondary);
+    }
+
+    .invite-status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .invite-status-badge.active {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .invite-status-badge.used {
+      background: rgba(148, 163, 184, 0.2);
+      color: var(--text-secondary);
+    }
+
+    .invite-status-badge.expired {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+
+    .btn-copy, .btn-revoke {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-copy {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--primary);
+    }
+
+    .btn-copy:hover {
+      background: rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-revoke {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+
+    .btn-revoke:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+
+    .no-invites {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+
+    /* Interview Table */
+    .table-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .table-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .search-input {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      width: 280px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 16px 24px;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    tr {
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    tr:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .candidate-name {
+      font-weight: 500;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-completed {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .status-progress {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .score-excellent {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .score-good {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--primary);
+    }
+
+    .score-fair {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    .score-poor {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+
+    .recommendation-text {
+      font-size: 13px;
+      max-width: 120px;
+    }
+
+    .rec-hire {
+      color: var(--success);
+    }
+
+    .rec-maybe {
+      color: var(--warning);
+    }
+
+    .rec-nohire {
+      color: var(--danger);
+    }
+
+    .action-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+      background: var(--primary);
+      color: white;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .action-btn.secondary {
+      background: var(--bg-card-hover);
+    }
+
+    /* Detail Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: none;
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+      background: var(--danger);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .detail-section {
+      margin-bottom: 28px;
+    }
+
+    .detail-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-overview {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .score-item {
+      text-align: center;
+      padding: 20px 32px;
+      background: var(--bg-dark);
+      border-radius: 12px;
+      min-width: 120px;
+    }
+
+    .score-value {
+      font-size: 36px;
+      font-weight: 700;
+    }
+
+    .score-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .transcript-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .qa-item {
+      background: var(--bg-dark);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .qa-question {
+      color: var(--primary);
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .qa-answer {
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .qa-number {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .feedback-text {
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    .strength-list, .improvement-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .list-item {
+      background: var(--bg-dark);
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+
+    .list-item-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .list-item-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Loading State */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      color: var(--text-secondary);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 80px 40px;
+      color: var(--text-secondary);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .content {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🎯</div>
+      <span>Interview Intelligence</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="refreshData()">
+        🔄 Refresh
+      </button>
+      <a href="index.html" class="btn btn-primary">
+        👤 Candidate View
+      </a>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <nav class="nav-section">
+        <div class="nav-section-title">Dashboard</div>
+        <div class="nav-item active" data-page="overview">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+          </svg>
+          <span>Overview</span>
+        </div>
+        <div class="nav-item" data-page="interviews">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+          </svg>
+          <span>Interviews</span>
+        </div>
+      </nav>
+      <nav class="nav-section">
+        <div class="nav-section-title">Analytics</div>
+        <div class="nav-item" data-page="analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+          </svg>
+          <span>Analytics</span>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <h1 class="page-title">Recruiter Dashboard</h1>
+      <p class="page-subtitle">Monitor and analyze candidate interviews</p>
+
+      <!-- Loading State -->
+      <div class="loading" id="loadingState">
+        <div class="spinner"></div>
+        <p>Loading dashboard data...</p>
+      </div>
+
+      <!-- Dashboard Content -->
+      <div id="dashboardContent" class="hidden">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Interviews</div>
+            <div class="stat-value" id="totalInterviews">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Analyzed</div>
+            <div class="stat-value" id="analyzedInterviews">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">In Progress</div>
+            <div class="stat-value" id="inProgressInterviews">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Average Score</div>
+            <div class="stat-value" id="averageScore">-</div>
+          </div>
+        </div>
+
+        <!-- Invite Management Panel -->
+        <div class="invite-panel">
+          <h3 class="invite-panel-title">🎟️ Invite Code Management</h3>
+          <div class="invite-form">
+            <div class="form-group">
+              <label class="form-label">Candidate Name</label>
+              <input type="text" class="form-input" id="candidateName" placeholder="John Doe">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Candidate Email</label>
+              <input type="email" class="form-input" id="candidateEmail" placeholder="john@example.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Position</label>
+              <input type="text" class="form-input" id="candidatePosition" placeholder=".NET Developer">
+            </div>
+            <button class="btn-generate" onclick="generateInvite()">
+              ✨ Generate Invite
+            </button>
+          </div>
+          <div class="invites-list" id="invitesList">
+            <!-- Populated by JS -->
+          </div>
+          <div class="no-invites hidden" id="noInvites">
+            📨 No invite codes yet. Generate one above to get started.
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">📊 Score Distribution</h3>
+            <div class="chart-container">
+              <canvas id="scoreChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">🎯 Hiring Recommendations</h3>
+            <div class="chart-container">
+              <canvas id="recommendationChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skills Comparison -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">💻 Average Skill Scores</h3>
+            <div class="chart-container">
+              <canvas id="skillsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interviews Table -->
+        <div class="table-card">
+          <div class="table-header">
+            <h3 class="table-title">Recent Interviews</h3>
+            <input type="text" class="search-input" placeholder="Search candidates..." id="searchInput">
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Date</th>
+                <th>Questions</th>
+                <th>Status</th>
+                <th>Score</th>
+                <th>Recommendation</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="interviewsTable">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+          <div class="empty-state hidden" id="emptyState">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">No interviews yet</div>
+            <p>Interviews will appear here once candidates complete them.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay hidden" id="detailModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Interview Details</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://synapsencebackend-dzceeafvbwgca8br.westus2-01.azurewebsites.net/';
+    
+    let interviews = [];
+    let analytics = {};
+    let inviteCodes = [];
+    let scoreChart, recommendationChart, skillsChart;
+
+    // Initialize dashboard
+    async function init() {
+      await refreshData();
+      await loadInviteCodes();
+      setupEventListeners();
+    }
+
+    // ============ Invite Code Management ============
+    
+    async function loadInviteCodes() {
+      try {
+        const response = await fetch(`${API_BASE}/api/admin/invites`);
+        inviteCodes = await response.json();
+        renderInvitesList();
+      } catch (error) {
+        console.error('Failed to load invite codes:', error);
+      }
+    }
+
+    function renderInvitesList() {
+      const container = document.getElementById('invitesList');
+      const noInvites = document.getElementById('noInvites');
+      
+      if (inviteCodes.length === 0) {
+        container.innerHTML = '';
+        noInvites.classList.remove('hidden');
+        return;
+      }
+      
+      noInvites.classList.add('hidden');
+      
+      container.innerHTML = inviteCodes.map(invite => {
+        const now = new Date();
+        const expiresAt = new Date(invite.expiresAt);
+        let statusClass = 'active';
+        let statusText = 'Active';
+        
+        if (invite.isUsed) {
+          statusClass = 'used';
+          statusText = 'Used';
+        } else if (expiresAt < now) {
+          statusClass = 'expired';
+          statusText = 'Expired';
+        }
+        
+        return `
+          <div class="invite-item">
+            <div class="invite-code">${invite.code}</div>
+            <div class="invite-info">
+              <span class="invite-name">${invite.candidateName}</span>
+              <span class="invite-email">${invite.candidateEmail}</span>
+            </div>
+            <span class="invite-position">${invite.position}</span>
+            <span class="invite-status-badge ${statusClass}">${statusText}</span>
+            <button class="btn-copy" onclick="copyInviteCode('${invite.code}')">📋 Copy</button>
+            ${!invite.isUsed ? `<button class="btn-revoke" onclick="revokeInvite('${invite.code}')">🗑️ Revoke</button>` : '<button class="btn-revoke" disabled style="opacity: 0.5;">🗑️ Revoke</button>'}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function generateInvite() {
+      const name = document.getElementById('candidateName').value.trim();
+      const email = document.getElementById('candidateEmail').value.trim();
+      const position = document.getElementById('candidatePosition').value.trim();
+      
+      if (!name || !email || !position) {
+        alert('Please fill in all fields');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/admin/invites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            candidateName: name,
+            candidateEmail: email,
+            position: position
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Clear form
+          document.getElementById('candidateName').value = '';
+          document.getElementById('candidateEmail').value = '';
+          document.getElementById('candidatePosition').value = '';
+          
+          // Reload invites
+          await loadInviteCodes();
+          
+          // Show success and copy to clipboard
+          copyInviteCode(data.code);
+          alert(`✅ Invite code generated: ${data.code}\n\nCode copied to clipboard!\n\nSend this to ${name} at ${email}`);
+        } else {
+          const error = await response.text();
+          alert('Failed to generate invite: ' + error);
+        }
+      } catch (error) {
+        console.error('Failed to generate invite:', error);
+        alert('Failed to generate invite code');
+      }
+    }
+
+    function copyInviteCode(code) {
+      navigator.clipboard.writeText(code).then(() => {
+        // Brief visual feedback
+        const btn = event?.target;
+        if (btn) {
+          const originalText = btn.textContent;
+          btn.textContent = '✅ Copied!';
+          setTimeout(() => btn.textContent = originalText, 1500);
+        }
+      });
+    }
+
+    async function revokeInvite(code) {
+      if (!confirm(`Are you sure you want to revoke invite code ${code}?`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/admin/invites/${code}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          await loadInviteCodes();
+        } else {
+          alert('Failed to revoke invite');
+        }
+      } catch (error) {
+        console.error('Failed to revoke invite:', error);
+        alert('Failed to revoke invite code');
+      }
+    }
+
+    // ============ Dashboard Data ============
+
+    // Fetch all data
+    async function refreshData() {
+      document.getElementById('loadingState').classList.remove('hidden');
+      document.getElementById('dashboardContent').classList.add('hidden');
+
+      try {
+        const [interviewsRes, analyticsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/admin/interviews`),
+          fetch(`${API_BASE}/api/admin/analytics`)
+        ]);
+
+        interviews = await interviewsRes.json();
+        analytics = await analyticsRes.json();
+
+        updateStats();
+        updateCharts();
+        updateTable();
+        await loadInviteCodes();
+
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('dashboardContent').classList.remove('hidden');
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        document.getElementById('loadingState').innerHTML = `
+          <p style="color: var(--danger);">❌ Failed to connect to server</p>
+          <p style="margin-top: 8px; font-size: 14px;">Make sure the backend is running on port 5090</p>
+          <button class="btn btn-primary" style="margin-top: 16px;" onclick="refreshData()">Retry</button>
+        `;
+      }
+    }
+
+    // Update stats cards
+    function updateStats() {
+      document.getElementById('totalInterviews').textContent = analytics.totalInterviews || 0;
+      document.getElementById('analyzedInterviews').textContent = analytics.analyzedInterviews || 0;
+      document.getElementById('inProgressInterviews').textContent = analytics.inProgressInterviews || 0;
+      document.getElementById('averageScore').textContent = analytics.averageScore ? `${analytics.averageScore}%` : '-';
+    }
+
+    // Update charts
+    function updateCharts() {
+      // Score Distribution Chart
+      const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+      if (scoreChart) scoreChart.destroy();
+      
+      const scoreData = analytics.scoreDistribution || {};
+      scoreChart = new Chart(scoreCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(scoreData),
+          datasets: [{
+            data: Object.values(scoreData),
+            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#94a3b8', padding: 16 }
+            }
+          }
+        }
+      });
+
+      // Recommendation Chart
+      const recCtx = document.getElementById('recommendationChart').getContext('2d');
+      if (recommendationChart) recommendationChart.destroy();
+      
+      const recData = analytics.recommendationBreakdown || {};
+      recommendationChart = new Chart(recCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(recData),
+          datasets: [{
+            data: Object.values(recData),
+            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+            borderRadius: 8,
+            barThickness: 40
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#94a3b8', stepSize: 1 },
+              grid: { color: '#334155' }
+            },
+            x: {
+              ticks: { color: '#94a3b8' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+
+      // Skills Chart
+      const skillsCtx = document.getElementById('skillsChart').getContext('2d');
+      if (skillsChart) skillsChart.destroy();
+      
+      skillsChart = new Chart(skillsCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Overall', 'Technical', 'Communication'],
+          datasets: [{
+            data: [
+              analytics.averageScore || 0,
+              analytics.averageTechnicalScore || 0,
+              analytics.averageCommunicationScore || 0
+            ],
+            backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981'],
+            borderRadius: 8,
+            barThickness: 60
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { color: '#94a3b8' },
+              grid: { color: '#334155' }
+            },
+            x: {
+              ticks: { color: '#94a3b8' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // Update interviews table
+    function updateTable() {
+      const tableBody = document.getElementById('interviewsTable');
+      const emptyState = document.getElementById('emptyState');
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+      const filteredInterviews = interviews.filter(i => 
+        (i.candidateName || '').toLowerCase().includes(searchTerm) ||
+        (i.position || '').toLowerCase().includes(searchTerm)
+      );
+
+      if (filteredInterviews.length === 0) {
+        tableBody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      tableBody.innerHTML = filteredInterviews.map(interview => {
+        const date = new Date(interview.startTime).toLocaleDateString('en-US', {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+
+        const statusClass = interview.status === 'Completed' ? 'status-completed' : 'status-progress';
+        const scoreClass = getScoreClass(interview.overallScore);
+        const recClass = getRecommendationClass(interview.hiringRecommendation);
+
+        return `
+          <tr onclick="viewDetails('${interview.sessionId}')">
+            <td class="candidate-name">${interview.candidateName || 'Unknown'}</td>
+            <td>${date}</td>
+            <td>${interview.questionCount}</td>
+            <td><span class="status-badge ${statusClass}">${interview.status}</span></td>
+            <td>${interview.overallScore ? `<span class="score-badge ${scoreClass}">${interview.overallScore}</span>` : '-'}</td>
+            <td class="recommendation-text ${recClass}">${interview.hiringRecommendation || '-'}</td>
+            <td>
+              <button class="action-btn" onclick="event.stopPropagation(); analyzeInterview('${interview.sessionId}')">
+                ${interview.hasAnalysis ? '📊 View' : '🔍 Analyze'}
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getScoreClass(score) {
+      if (!score) return '';
+      if (score >= 80) return 'score-excellent';
+      if (score >= 60) return 'score-good';
+      if (score >= 40) return 'score-fair';
+      return 'score-poor';
+    }
+
+    function getRecommendationClass(rec) {
+      if (!rec) return '';
+      const lower = rec.toLowerCase();
+      if (lower.includes('strong') || (lower.includes('hire') && !lower.includes('no'))) return 'rec-hire';
+      if (lower.includes('maybe') || lower.includes('consider')) return 'rec-maybe';
+      return 'rec-nohire';
+    }
+
+    // View interview details
+    async function viewDetails(sessionId) {
+      const modal = document.getElementById('detailModal');
+      const modalBody = document.getElementById('modalBody');
+      
+      modal.classList.remove('hidden');
+      modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading details...</p></div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/admin/interviews/${sessionId}`);
+        const data = await response.json();
+        
+        document.getElementById('modalTitle').textContent = `${data.candidateName || 'Unknown'} - Interview Details`;
+        
+        let analysisHTML = '';
+        if (data.analysis) {
+          analysisHTML = `
+            <div class="detail-section">
+              <h3 class="detail-section-title">📊 Scores Overview</h3>
+              <div class="score-overview">
+                <div class="score-item">
+                  <div class="score-value" style="color: var(--primary)">${data.analysis.overallScore}</div>
+                  <div class="score-label">Overall</div>
+                </div>
+                <div class="score-item">
+                  <div class="score-value" style="color: var(--success)">${data.analysis.technicalSkills.score}</div>
+                  <div class="score-label">Technical</div>
+                </div>
+                <div class="score-item">
+                  <div class="score-value" style="color: #8b5cf6">${data.analysis.communication.score}</div>
+                  <div class="score-label">Communication</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h3 class="detail-section-title">📝 Overall Feedback</h3>
+              <p class="feedback-text">${data.analysis.overallFeedback}</p>
+            </div>
+
+            <div class="detail-section">
+              <h3 class="detail-section-title">🎯 Hiring Recommendation</h3>
+              <p class="feedback-text" style="font-weight: 600; color: ${getRecommendationClass(data.analysis.hiringRecommendation) === 'rec-hire' ? 'var(--success)' : getRecommendationClass(data.analysis.hiringRecommendation) === 'rec-maybe' ? 'var(--warning)' : 'var(--danger)'}">
+                ${data.analysis.hiringRecommendation}
+              </p>
+            </div>
+
+            <div class="detail-section">
+              <h3 class="detail-section-title">✅ Strengths</h3>
+              <div class="strength-list">
+                ${data.analysis.strengths.map(s => `
+                  <div class="list-item">
+                    <div class="list-item-title">${s.area}</div>
+                    <div class="list-item-desc">${s.description}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h3 class="detail-section-title">🎯 Areas for Improvement</h3>
+              <div class="improvement-list">
+                ${data.analysis.areasForImprovement.map(a => `
+                  <div class="list-item">
+                    <div class="list-item-title">${a.area}</div>
+                    <div class="list-item-desc">${a.description}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          analysisHTML = `
+            <div class="detail-section">
+              <div class="empty-state" style="padding: 40px;">
+                <div class="empty-icon">📊</div>
+                <div class="empty-title">Not Yet Analyzed</div>
+                <p style="margin-bottom: 16px;">Click the button below to analyze this interview</p>
+                <button class="btn btn-primary" onclick="analyzeInterview('${sessionId}')">🔍 Analyze Interview</button>
+              </div>
+            </div>
+          `;
+        }
+
+        // Check for video recording
+        let videoHTML = '';
+        try {
+          const videoResp = await fetch(`${API_BASE}/api/storage/video/${sessionId}`);
+          if (videoResp.ok) {
+            const videoData = await videoResp.json();
+            videoHTML = `
+              <div class="detail-section">
+                <h3 class="detail-section-title">🎥 Interview Recording</h3>
+                <div style="background: var(--bg-dark); border-radius: 12px; padding: 16px;">
+                  <video controls style="width: 100%; max-height: 400px; border-radius: 8px;">
+                    <source src="${videoData.videoUrl}" type="video/webm">
+                    Your browser does not support video playback.
+                  </video>
+                  <div style="margin-top: 12px; display: flex; gap: 12px;">
+                    <a href="${videoData.videoUrl}" download class="btn btn-secondary" style="text-decoration: none;">
+                      📥 Download Recording
+                    </a>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        } catch (e) {
+          console.log('No video available for this session');
+        }
+
+        modalBody.innerHTML = `
+          ${videoHTML}
+          ${analysisHTML}
+          
+          <div class="detail-section">
+            <h3 class="detail-section-title">💬 Transcript (${data.transcript.length} exchanges)</h3>
+            <div class="transcript-list">
+              ${data.transcript.length > 0 ? data.transcript.map(qa => `
+                <div class="qa-item">
+                  <div class="qa-number">Question ${qa.questionNumber}</div>
+                  <div class="qa-question">Q: ${qa.question}</div>
+                  <div class="qa-answer">A: ${qa.answer}</div>
+                </div>
+              `).join('') : '<p style="color: var(--text-secondary);">No transcript available</p>'}
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        modalBody.innerHTML = `<p style="color: var(--danger);">Failed to load interview details</p>`;
+      }
+    }
+
+    // Analyze interview
+    async function analyzeInterview(sessionId) {
+      const modal = document.getElementById('detailModal');
+      const modalBody = document.getElementById('modalBody');
+      
+      modal.classList.remove('hidden');
+      modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analyzing interview with AI...</p></div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/interview/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId })
+        });
+
+        if (!response.ok) throw new Error('Analysis failed');
+
+        // Refresh data and show details
+        await refreshData();
+        await viewDetails(sessionId);
+      } catch (error) {
+        modalBody.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">❌</div>
+            <div class="empty-title">Analysis Failed</div>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Close modal
+    function closeModal() {
+      document.getElementById('detailModal').classList.add('hidden');
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Search
+      document.getElementById('searchInput').addEventListener('input', updateTable);
+
+      // Modal close on overlay click
+      document.getElementById('detailModal').addEventListener('click', (e) => {
+        if (e.target.id === 'detailModal') closeModal();
+      });
+
+      // Escape key closes modal
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+      });
+
+      // Navigation
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+        });
+      });
+    }
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>
