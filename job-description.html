@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Job Description - Interview Intelligence</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --bg-input: #0f172a;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --border-color: #334155;
+    }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-primary:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: #475569;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    /* Main Content */
+    .main-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+
+    /* Form Styles */
+    .form-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 32px;
+      border: 1px solid var(--border-color);
+    }
+
+    .form-section {
+      margin-bottom: 28px;
+    }
+
+    .form-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--primary-light);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .form-label .required {
+      color: var(--danger);
+      margin-left: 4px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .form-textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Skills Input */
+    .skills-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      min-height: 50px;
+      cursor: text;
+    }
+
+    .skills-container:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .skill-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    .skill-tag .remove-skill {
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      opacity: 0.8;
+    }
+
+    .skill-tag .remove-skill:hover {
+      opacity: 1;
+    }
+
+    .skill-input {
+      flex: 1;
+      min-width: 120px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .skill-input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    /* Form Actions */
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* Success Message */
+    .success-message {
+      display: none;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--success);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      color: var(--success);
+      align-items: center;
+      gap: 12px;
+    }
+
+    .success-message.show {
+      display: flex;
+    }
+
+    .success-icon {
+      font-size: 24px;
+    }
+
+    /* Error Message */
+    .error-message {
+      display: none;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--danger);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      color: var(--danger);
+      align-items: center;
+      gap: 12px;
+    }
+
+    .error-message.show {
+      display: flex;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Job List Section */
+    .job-list-section {
+      margin-top: 48px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .job-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .job-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+
+    .job-item:hover {
+      border-color: var(--primary);
+    }
+
+    .job-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .job-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .job-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: none;
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .btn-icon:hover {
+      background: #475569;
+    }
+
+    .btn-icon.delete:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        padding: 12px 16px;
+      }
+
+      .main-content {
+        padding: 24px 16px;
+      }
+
+      .form-card {
+        padding: 20px;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <a href="admin.html" class="logo">
+      <div class="logo-icon">🧠</div>
+      <span>SynapSense</span>
+    </a>
+    <div class="header-actions">
+      <a href="index.html" class="btn btn-secondary">
+        <span>🎥</span> Interview Room
+      </a>
+      <a href="admin.html" class="btn btn-secondary">
+        <span>📊</span> Dashboard
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <h1 class="page-title">Add Job Description</h1>
+    <p class="page-subtitle">Create a new job description for interview evaluation</p>
+
+    <!-- Success Message -->
+    <div class="success-message" id="successMessage">
+      <span class="success-icon">✓</span>
+      <span id="successText">Job description saved successfully!</span>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" id="errorMessage">
+      <span>⚠️</span>
+      <span id="errorText">An error occurred. Please try again.</span>
+    </div>
+
+    <!-- Job Description Form -->
+    <div class="form-card">
+      <form id="jobDescriptionForm">
+        <div class="form-section">
+          <h2 class="form-section-title">📋 Basic Information</h2>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">
+                Job Title <span class="required">*</span>
+              </label>
+              <input type="text" class="form-input" id="jobTitle" name="jobTitle" 
+                     placeholder="e.g., Senior Software Engineer" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">
+                Department <span class="required">*</span>
+              </label>
+              <select class="form-select" id="department" name="department" required>
+                <option value="">Select Department</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Product">Product</option>
+                <option value="Design">Design</option>
+                <option value="Data Science">Data Science</option>
+                <option value="DevOps">DevOps</option>
+                <option value="QA">Quality Assurance</option>
+                <option value="Security">Security</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">
+                Experience Level <span class="required">*</span>
+              </label>
+              <select class="form-select" id="experienceLevel" name="experienceLevel" required>
+                <option value="">Select Level</option>
+                <option value="Entry">Entry Level (0-2 years)</option>
+                <option value="Mid">Mid Level (2-5 years)</option>
+                <option value="Senior">Senior (5-8 years)</option>
+                <option value="Lead">Lead/Staff (8-12 years)</option>
+                <option value="Principal">Principal/Architect (12+ years)</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">
+                Employment Type
+              </label>
+              <select class="form-select" id="employmentType" name="employmentType">
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Internship">Internship</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="form-section-title">📝 Job Details</h2>
+          
+          <div class="form-group">
+            <label class="form-label">
+              Job Description <span class="required">*</span>
+            </label>
+            <textarea class="form-textarea" id="description" name="description" 
+                      placeholder="Provide a detailed description of the role, responsibilities, and what the candidate will be working on..." 
+                      required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Key Responsibilities
+            </label>
+            <textarea class="form-textarea" id="responsibilities" name="responsibilities" 
+                      placeholder="List the main responsibilities and duties for this role..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="form-section-title">🎯 Requirements</h2>
+          
+          <div class="form-group">
+            <label class="form-label">
+              Required Skills <span class="required">*</span>
+            </label>
+            <div class="skills-container" id="requiredSkillsContainer">
+              <input type="text" class="skill-input" id="requiredSkillInput" 
+                     placeholder="Type a skill and press Enter...">
+            </div>
+            <input type="hidden" id="requiredSkills" name="requiredSkills">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Nice-to-Have Skills
+            </label>
+            <div class="skills-container" id="niceToHaveSkillsContainer">
+              <input type="text" class="skill-input" id="niceToHaveSkillInput" 
+                     placeholder="Type a skill and press Enter...">
+            </div>
+            <input type="hidden" id="niceToHaveSkills" name="niceToHaveSkills">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Qualifications
+            </label>
+            <textarea class="form-textarea" id="qualifications" name="qualifications" 
+                      placeholder="List educational requirements, certifications, or other qualifications..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="form-section-title">💡 Interview Focus</h2>
+          
+          <div class="form-group">
+            <label class="form-label">
+              Key Topics to Evaluate
+            </label>
+            <textarea class="form-textarea" id="interviewTopics" name="interviewTopics" 
+                      placeholder="List the key topics, concepts, or areas the interviewer should focus on during the interview..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Evaluation Criteria
+            </label>
+            <textarea class="form-textarea" id="evaluationCriteria" name="evaluationCriteria" 
+                      placeholder="Describe how candidates should be evaluated (technical depth, problem-solving, communication, etc.)..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="resetForm()">
+            <span>↻</span> Reset
+          </button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            <span>💾</span> Save Job Description
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Saved Job Descriptions -->
+    <div class="job-list-section">
+      <div class="section-header">
+        <h2 class="section-title">📂 Saved Job Descriptions</h2>
+        <button class="btn btn-secondary" onclick="loadJobDescriptions()">
+          <span>↻</span> Refresh
+        </button>
+      </div>
+      <div class="job-list" id="jobList">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-state-icon">📄</div>
+          <p>No job descriptions saved yet</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Skills management
+    const requiredSkills = [];
+    const niceToHaveSkills = [];
+
+    function initSkillsInput(containerId, inputId, skillsArray, hiddenInputId) {
+      const container = document.getElementById(containerId);
+      const input = document.getElementById(inputId);
+      const hiddenInput = document.getElementById(hiddenInputId);
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          const skill = input.value.trim();
+          if (skill && !skillsArray.includes(skill)) {
+            skillsArray.push(skill);
+            renderSkills(containerId, inputId, skillsArray, hiddenInputId);
+            input.value = '';
+          }
+        }
+      });
+
+      container.addEventListener('click', () => {
+        input.focus();
+      });
+    }
+
+    function renderSkills(containerId, inputId, skillsArray, hiddenInputId) {
+      const container = document.getElementById(containerId);
+      const input = document.getElementById(inputId);
+      const hiddenInput = document.getElementById(hiddenInputId);
+
+      // Clear existing tags
+      const tags = container.querySelectorAll('.skill-tag');
+      tags.forEach(tag => tag.remove());
+
+      // Add skill tags
+      skillsArray.forEach((skill, index) => {
+        const tag = document.createElement('span');
+        tag.className = 'skill-tag';
+        tag.innerHTML = `
+          ${skill}
+          <span class="remove-skill" onclick="removeSkill('${containerId}', '${inputId}', ${index}, '${hiddenInputId}')">&times;</span>
+        `;
+        container.insertBefore(tag, input);
+      });
+
+      // Update hidden input
+      hiddenInput.value = JSON.stringify(skillsArray);
+    }
+
+    function removeSkill(containerId, inputId, index, hiddenInputId) {
+      const skillsArray = containerId === 'requiredSkillsContainer' ? requiredSkills : niceToHaveSkills;
+      skillsArray.splice(index, 1);
+      renderSkills(containerId, inputId, skillsArray, hiddenInputId);
+    }
+
+    // Initialize skills inputs
+    initSkillsInput('requiredSkillsContainer', 'requiredSkillInput', requiredSkills, 'requiredSkills');
+    initSkillsInput('niceToHaveSkillsContainer', 'niceToHaveSkillInput', niceToHaveSkills, 'niceToHaveSkills');
+
+    // Form submission
+    document.getElementById('jobDescriptionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<div class="spinner"></div> Saving...';
+      submitBtn.disabled = true;
+
+      try {
+        // Collect form data
+        const formData = {
+          id: generateId(),
+          jobTitle: document.getElementById('jobTitle').value,
+          department: document.getElementById('department').value,
+          experienceLevel: document.getElementById('experienceLevel').value,
+          employmentType: document.getElementById('employmentType').value,
+          description: document.getElementById('description').value,
+          responsibilities: document.getElementById('responsibilities').value,
+          requiredSkills: requiredSkills,
+          niceToHaveSkills: niceToHaveSkills,
+          qualifications: document.getElementById('qualifications').value,
+          interviewTopics: document.getElementById('interviewTopics').value,
+          evaluationCriteria: document.getElementById('evaluationCriteria').value,
+          createdAt: new Date().toISOString(),
+          createdBy: 'Interviewer' // Could be replaced with actual user info
+        };
+
+        // Validate required skills
+        if (requiredSkills.length === 0) {
+          throw new Error('Please add at least one required skill');
+        }
+
+        // Save to Azure Blob Storage
+        await saveJobDescription(formData);
+
+        // Show success message
+        showSuccess('Job description saved successfully!');
+        
+        // Reset form
+        resetForm();
+        
+        // Reload job list
+        loadJobDescriptions();
+
+      } catch (error) {
+        console.error('Error saving job description:', error);
+        showError(error.message || 'Failed to save job description. Please try again.');
+      } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+
+    function generateId() {
+      return 'jd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // API base URL - Azure deployment
+    const API_BASE = 'https://synapsense-frontend-h8aggkddachwgqen.westus2-01.azurewebsites.net/api';
+
+    async function saveJobDescription(data) {
+      // Save to Cosmos DB via backend API
+      const response = await fetch(`${API_BASE}/job-descriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API error:', errorData);
+        throw new Error(errorData.error || `Failed to save: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    }
+
+    async function loadJobDescriptions() {
+      const jobList = document.getElementById('jobList');
+      const emptyState = document.getElementById('emptyState');
+      
+      try {
+        // Fetch job descriptions from Cosmos DB via backend API
+        const response = await fetch(`${API_BASE}/job-descriptions`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+        }
+
+        const jobs = await response.json();
+        
+        if (!jobs || jobs.length === 0) {
+          jobList.innerHTML = '';
+          jobList.appendChild(emptyState);
+          emptyState.style.display = 'block';
+          return;
+        }
+
+        // Sort by creation date (newest first)
+        jobs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Render job list
+        jobList.innerHTML = jobs.map(job => `
+          <div class="job-item" data-id="${job.id}">
+            <div class="job-info">
+              <h3>${escapeHtml(job.jobTitle)}</h3>
+              <div class="job-meta">
+                <span>🏢 ${escapeHtml(job.department)}</span>
+                <span>📊 ${escapeHtml(job.experienceLevel)}</span>
+                <span>📅 ${formatDate(job.createdAt)}</span>
+              </div>
+            </div>
+            <div class="job-actions">
+              <button class="btn-icon" onclick="viewJob('${job.id}')" title="View">
+                👁️
+              </button>
+              <button class="btn-icon delete" onclick="deleteJob('${job.id}')" title="Delete">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('Error loading job descriptions:', error);
+        jobList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <p>Failed to load job descriptions. ${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    async function deleteJob(jobId) {
+      if (!confirm('Are you sure you want to delete this job description?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/job-descriptions/${jobId}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok && response.status !== 404) {
+          throw new Error(`Failed to delete: ${response.status}`);
+        }
+
+        showSuccess('Job description deleted successfully!');
+        loadJobDescriptions();
+
+      } catch (error) {
+        console.error('Error deleting job:', error);
+        showError('Failed to delete job description. Please try again.');
+      }
+    }
+
+    async function viewJob(jobId) {
+      try {
+        const response = await fetch(`${API_BASE}/job-descriptions/${jobId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch job details');
+        }
+        const job = await response.json();
+        
+        // Show job details in an alert for now (could be a modal)
+        const details = `
+Job Title: ${job.jobTitle}
+Department: ${job.department}
+Experience Level: ${job.experienceLevel}
+Employment Type: ${job.employmentType}
+
+Description:
+${job.description}
+
+Required Skills: ${job.requiredSkills?.join(', ') || 'N/A'}
+Nice-to-Have Skills: ${job.niceToHaveSkills?.join(', ') || 'N/A'}
+
+Interview Topics:
+${job.interviewTopics || 'N/A'}
+
+Created: ${formatDate(job.createdAt)}
+        `.trim();
+        
+        alert(details);
+      } catch (error) {
+        console.error('Error viewing job:', error);
+        showError('Failed to load job details.');
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('jobDescriptionForm').reset();
+      requiredSkills.length = 0;
+      niceToHaveSkills.length = 0;
+      renderSkills('requiredSkillsContainer', 'requiredSkillInput', requiredSkills, 'requiredSkills');
+      renderSkills('niceToHaveSkillsContainer', 'niceToHaveSkillInput', niceToHaveSkills, 'niceToHaveSkills');
+    }
+
+    function showSuccess(message) {
+      const successEl = document.getElementById('successMessage');
+      const errorEl = document.getElementById('errorMessage');
+      document.getElementById('successText').textContent = message;
+      successEl.classList.add('show');
+      errorEl.classList.remove('show');
+      setTimeout(() => successEl.classList.remove('show'), 5000);
+    }
+
+    function showError(message) {
+      const successEl = document.getElementById('successMessage');
+      const errorEl = document.getElementById('errorMessage');
+      document.getElementById('errorText').textContent = message;
+      errorEl.classList.add('show');
+      successEl.classList.remove('show');
+      setTimeout(() => errorEl.classList.remove('show'), 5000);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatDate(dateString) {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    // Load job descriptions on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadJobDescriptions();
+    });
+  </script>
+</body>
+</html>
