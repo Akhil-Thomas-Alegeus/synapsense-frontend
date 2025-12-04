@@ -1231,6 +1231,10 @@
       // Global speaking state - track when AI is speaking (avatar or TTS)
       let isSpeaking = false;
       
+      // Track the current question being asked (for repeat after interrupt)
+      let currentQuestionText = null;
+      let questionWasInterrupted = false;
+      
       // Interview session tracking
       let interviewSessionId = null;
       let questionCount = 0;
@@ -1683,7 +1687,13 @@
           }
         }, 500);
         
-        // 6. Set appropriate status based on interrupt type
+        // 6. Mark that the question was interrupted (so we can repeat it)
+        if (currentQuestionText && isSpeaking) {
+          questionWasInterrupted = true;
+          console.log('📝 Question was interrupted, can be repeated:', currentQuestionText.substring(0, 50) + '...');
+        }
+        
+        // 7. Set appropriate status based on interrupt type
         if (voiceInterrupt) {
           wasInterrupted = true; // Mark that we were interrupted by voice
           pendingUserSpeech = null; // Clear any pending speech - we're starting fresh
@@ -1693,16 +1703,23 @@
           // Add visual "listening" state to AI tile
           aiTile.classList.add('listening');
           
+          // After a short delay, ask if they want the question repeated
+          setTimeout(() => {
+            if (questionWasInterrupted && currentQuestionText) {
+              showToast('💡 Say "repeat" or "what was the question" to hear it again', 4000);
+            }
+          }, 1500);
+          
           // Remove listening state after user stops speaking (or timeout)
           setTimeout(() => {
             aiTile.classList.remove('listening');
-          }, 4000);
+          }, 5000);
         } else {
           // Manual interrupt - clear state
           wasInterrupted = false;
           pendingUserSpeech = null;
           avatarStatus.textContent = 'Ready';
-          showToast('✅ AI stopped', 1500);
+          showToast('✅ AI stopped. Say "repeat" to hear the question again.', 3000);
           console.log('✅ AI speech interrupted manually');
           aiTile.classList.remove('listening');
         }
@@ -2425,10 +2442,36 @@
         'wait a minute', 'wait a second', 'hold that thought', 'before you continue',
         'can i ask', 'quick question', 'i have a question', 'can you clarify'
       ];
+      
+      // Phrases that request repeating the question
+      const repeatRequestPhrases = [
+        'repeat', 'repeat that', 'repeat the question', 'say that again', 'say again',
+        'what was the question', 'what did you say', 'what was that', 'can you repeat',
+        'could you repeat', 'please repeat', 'i missed that', 'pardon', 'come again',
+        'one more time', 'again please', 'repeat please', 'sorry what', 'huh'
+      ];
+      
+      // Check if user is asking to repeat the question
+      function isRepeatRequest(text) {
+        const normalizedText = text.toLowerCase().trim();
+        for (const phrase of repeatRequestPhrases) {
+          if (normalizedText === phrase || 
+              normalizedText.includes(phrase) ||
+              normalizedText.startsWith(phrase)) {
+            return true;
+          }
+        }
+        return false;
+      }
 
       // Check if speech is just an interruption phrase (not an actual answer)
       function isInterruptionPhrase(text) {
         const normalizedText = text.toLowerCase().trim();
+        
+        // First check if it's a repeat request
+        if (isRepeatRequest(normalizedText)) {
+          return true; // Treat as interruption, will be handled specially
+        }
         
         // Check exact matches or starts with common interruptions
         for (const phrase of interruptionPhrases) {
@@ -2501,11 +2544,28 @@
           setUserSpeaking(false);
           
           if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
-            const text = e.result.text.trim();
+            let text = e.result.text.trim();
             
             // Ignore empty or very short speech (noise/silence)
             if (!text || text.length < 2) {
               console.log('🎤 Ignoring empty/short speech');
+              return;
+            }
+            
+            // 🔄 Check if user is asking to REPEAT the question
+            if (isRepeatRequest(text) && currentQuestionText) {
+              console.log('🔄 User requested repeat of question');
+              showToast('🔄 Repeating the question...', 2000);
+              questionWasInterrupted = false; // Clear the interrupted flag
+              
+              // Repeat the current question
+              setTimeout(async () => {
+                if (avatarSynthesizer && isAvatarVideoDisplaying) {
+                  await speakWithAvatar(currentQuestionText);
+                } else {
+                  await speakWithTTS(currentQuestionText);
+                }
+              }, 500);
               return;
             }
             
@@ -2518,7 +2578,11 @@
               // Just acknowledge and wait for the actual answer
               if (!isSpeaking && !aiTile.classList.contains('speaking')) {
                 // AI already stopped - let user know we're ready
-                showToast('👂 Go ahead, I\'m listening...', 2500);
+                if (questionWasInterrupted && currentQuestionText) {
+                  showToast('👂 Listening... Say "repeat" to hear the question again', 3500);
+                } else {
+                  showToast('👂 Go ahead, I\'m listening...', 2500);
+                }
                 avatarStatus.textContent = 'Listening...';
                 aiTile.classList.add('listening');
                 setTimeout(() => aiTile.classList.remove('listening'), 4000);
@@ -2554,6 +2618,9 @@
               pendingUserSpeech = null;
               wasInterrupted = false;
             }
+            
+            // Clear interrupted flag since we're processing an answer
+            questionWasInterrupted = false;
             
             const answerReceivedTime = Date.now();
             transcriptDiv.innerText = text;
@@ -2658,6 +2725,8 @@
                 }
                 
                 questionDiv.innerText = question;
+                currentQuestionText = question; // Store for repeat functionality
+                questionWasInterrupted = false; // Reset interrupted flag for new question
                 window.lastQuestionTime = Date.now(); // Track when question was asked
                 console.log('🎤 LLM Response received, will speak:', question);
                 
