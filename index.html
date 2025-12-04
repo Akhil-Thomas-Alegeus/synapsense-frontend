@@ -2582,7 +2582,7 @@
           console.warn('Could not auto-start avatar, falling back to TTS:', err);
           // Fallback to TTS welcome message if avatar fails
           setTimeout(() => {
-            speakWithTTS("Welcome to your AI interview session. When you're ready, click the microphone button to start speaking. I'll listen to your responses and ask follow-up questions.");
+            speakWithTTS("Hey there! Welcome to your interview. Whenever you're ready, just click the microphone button and we can get started. I'm excited to learn more about you!");
           }, 500);
         }
       };
@@ -2597,7 +2597,8 @@
           const { token, region } = await fetchSpeechToken();
           
           const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
-          speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
+          // Use AvaMultilingualNeural - more natural and conversational
+          speechConfig.speechSynthesisVoiceName = "en-US-AvaMultilingualNeural";
           
           const player = new sdk.SpeakerAudioDestination();
           
@@ -2619,7 +2620,7 @@
           setAISpeaking(true);
           
           synthesizer.speakTextAsync(
-            "Audio test successful. You're ready to join.",
+            "Hey! Audio test successful. You're all set to join.",
             result => {
               // Don't stop animation here - wait for onAudioEnd
               if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
@@ -2717,8 +2718,8 @@
           // Create speech config using the authorization token
           const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
           speechConfig.speechSynthesisLanguage = "en-US";
-          // Use a voice that works well with the lisa avatar for lip-sync
-          speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
+          // Use AvaMultilingualNeural - more natural, conversational voice
+          speechConfig.speechSynthesisVoiceName = "en-US-AvaMultilingualNeural";
 
           // Avatar config - using lisa with casual-sitting style
           // Available avatars: lisa, jenny, aria, guy, harry, etc.
@@ -2727,7 +2728,7 @@
           avatarConfig.backgroundColor = '#FFFFFFFF'; // White background
           avatarConfig.customized = false;
           
-          console.log('🎭 Avatar: Config - character: lisa, style: casual-sitting, voice: en-US-JennyNeural');
+          console.log('🎭 Avatar: Config - character: lisa, style: casual-sitting, voice: en-US-AvaMultilingualNeural');
           
           // Setup WebRTC peer connection with ICE servers from Azure relay
           const iceServerUrl = iceInfo.Urls[0];
@@ -2964,7 +2965,7 @@
           // Wait a moment for video track to be ready, then speak
           await new Promise(resolve => setTimeout(resolve, 1000));
           console.log('🎭 Avatar ready, isAvatarVideoDisplaying:', isAvatarVideoDisplaying);
-          await speakWithAvatar("Hello! I'm your AI interviewer. Click the microphone button to begin.");
+          await speakWithAvatar("Hey! I'm your interviewer today. Go ahead and click the mic button whenever you're ready to chat!");
 
         } catch (error) {
           console.error('🎭 Avatar: Failed to start avatar:', error);
@@ -3120,7 +3121,8 @@
             const { token, region } = await fetchSpeechToken();
             
             const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
-            speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
+            // Use AvaMultilingualNeural - more natural and conversational
+            speechConfig.speechSynthesisVoiceName = "en-US-AvaMultilingualNeural";
             
             const player = new sdk.SpeakerAudioDestination();
             
