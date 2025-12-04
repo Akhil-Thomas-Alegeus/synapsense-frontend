@@ -2000,7 +2000,16 @@
                 ` : ''}
               </div>
             </div>
-            ` : ''}
+            ` : `
+            <div class="detail-section">
+              <h3 class="detail-section-title">📋 Job Fit Analysis</h3>
+              <div style="background: rgba(100, 116, 139, 0.1); border-radius: 12px; padding: 16px; text-align: center;">
+                <p style="margin: 0; opacity: 0.7;">⚠️ No Job Description was linked to this interview.</p>
+                <p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.5;">To see JD fit analysis, ensure a Job Description is selected when creating the invite, then re-analyze.</p>
+                <button class="btn btn-secondary" style="margin-top: 12px;" onclick="analyzeInterview('${sessionId}')">🔄 Re-Analyze Interview</button>
+              </div>
+            </div>
+            `}
 
             ${data.analysis.alternativeJobMatches?.length > 0 ? `
             <div class="detail-section">
