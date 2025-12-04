@@ -1113,6 +1113,9 @@
     <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
     <script>
       const sdk = SpeechSDK;
+      
+      // API Base URL for backend
+      const API_BASE = 'https://synapsencebackend-dzceeafvbwgca8br.westus2-01.azurewebsites.net';
 
       // DOM elements
       const startBtn = document.getElementById('start');
@@ -1267,7 +1270,7 @@
           };
           
           xhr.timeout = 300000; // 5 minute timeout
-          xhr.open('POST', `/api/storage/upload-video/${interviewSessionId}`);
+          xhr.open('POST', `${API_BASE}/api/storage/upload-video/${interviewSessionId}`);
           xhr.setRequestHeader('Content-Type', 'video/webm');
           xhr.send(blob);
           
@@ -1376,7 +1379,7 @@
         }
         
         try {
-          const response = await fetch(`/api/invite/validate/${code.toUpperCase()}`);
+          const response = await fetch(`${API_BASE}/api/invite/validate/${code.toUpperCase()}`);
           const data = await response.json();
           
           if (data.valid) {
@@ -1475,7 +1478,7 @@
         
         // Start interview session on backend with invite code
         try {
-          const sessionResp = await fetch('/api/interview/start', {
+          const sessionResp = await fetch(`${API_BASE}/api/interview/start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ inviteCode: validatedInvite.code })
@@ -1498,10 +1501,38 @@
           startVideoRecording();
         }, 1000);
         
-        // Auto-start avatar or show welcome
-        setTimeout(() => {
-          speakWithTTS("Welcome to your AI interview session. When you're ready, click the microphone button to start speaking. I'll listen to your responses and ask follow-up questions.");
-        }, 500);
+        // Unlock audio (required by browser policy) - user clicked so we can do this
+        try {
+          if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+          }
+          // Play a silent buffer to fully unlock audio
+          const buffer = audioContext.createBuffer(1, 1, 22050);
+          const source = audioContext.createBufferSource();
+          source.buffer = buffer;
+          source.connect(audioContext.destination);
+          source.start();
+          audioUnlocked = true;
+          console.log('🔊 Audio unlocked automatically');
+        } catch (e) {
+          console.warn('Could not auto-unlock audio:', e);
+        }
+        
+        // Auto-start the AI Avatar
+        showToast('🎬 Starting AI Avatar...');
+        try {
+          await startAvatar();
+          console.log('🎭 Avatar started automatically');
+        } catch (err) {
+          console.warn('Could not auto-start avatar, falling back to TTS:', err);
+          // Fallback to TTS welcome message if avatar fails
+          setTimeout(() => {
+            speakWithTTS("Welcome to your AI interview session. When you're ready, click the microphone button to start speaking. I'll listen to your responses and ask follow-up questions.");
+          }, 500);
+        }
       };
 
       // ============ Test TTS Function ============
@@ -1671,12 +1702,16 @@
               aiPlaceholder.style.display = 'none';
               avatarVideo.autoplay = true;
               avatarVideo.playsInline = true;
+              
+              // Set flag immediately when we get video track - don't wait for play promise
+              isAvatarVideoDisplaying = true;
+              console.log('✅🎭 Avatar VIDEO TRACK RECEIVED - isAvatarVideoDisplaying = true');
+              
               avatarVideo.play().then(() => {
-                console.log('✅🎭 Avatar VIDEO IS NOW DISPLAYING');
-                isAvatarVideoDisplaying = true;
+                console.log('✅🎭 Avatar VIDEO IS NOW PLAYING');
               }).catch(e => {
                 console.log('Video autoplay issue:', e);
-                isAvatarVideoDisplaying = false;
+                // Don't set to false here - the track is still valid
               });
             }
             if (event.track.kind === 'audio') {
@@ -1772,6 +1807,9 @@
           startAvatarBtn.disabled = true;
           stopAvatarBtn.disabled = false;
 
+          // Wait a moment for video track to be ready, then speak
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log('🎭 Avatar ready, isAvatarVideoDisplaying:', isAvatarVideoDisplaying);
           await speakWithAvatar("Hello! I'm your AI interviewer. Click the microphone button to begin.");
 
         } catch (error) {
@@ -2004,7 +2042,7 @@
           // Mark interview as complete on backend (this also saves transcript)
           if (interviewSessionId) {
             try {
-              await fetch(`/api/admin/interviews/${interviewSessionId}/complete`, {
+              await fetch(`${API_BASE}/api/admin/interviews/${interviewSessionId}/complete`, {
                 method: 'POST'
               });
             } catch (e) {
@@ -2041,7 +2079,14 @@
           setUserSpeaking(false);
           
           if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
-            const text = e.result.text;
+            const text = e.result.text.trim();
+            
+            // Ignore empty or very short speech (noise/silence)
+            if (!text || text.length < 2) {
+              console.log('🎤 Ignoring empty/short speech');
+              return;
+            }
+            
             const answerReceivedTime = Date.now();
             transcriptDiv.innerText = text;
             console.log('🎤 Recognized speech:', text);
@@ -2058,7 +2103,7 @@
                 if (interviewSessionId && currentQuestion && currentQuestion !== 'Waiting to start...' && currentQuestion !== 'Click the microphone to begin') {
                   const responseTime = (answerReceivedTime - (window.lastQuestionTime || answerReceivedTime)) / 1000;
                   try {
-                    await fetch('/api/interview/transcript', {
+                    await fetch(`${API_BASE}/api/interview/transcript`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -2074,7 +2119,7 @@
                   }
                 }
                 
-                const resp = await fetch('/api/generate-question', {
+                const resp = await fetch(`${API_BASE}/api/generate-question`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ 
@@ -2117,7 +2162,7 @@
                   
                   // Mark interview as complete on backend
                   if (interviewSessionId) {
-                    fetch(`/api/admin/interviews/${interviewSessionId}/complete`, {
+                    fetch(`${API_BASE}/api/admin/interviews/${interviewSessionId}/complete`, {
                       method: 'POST'
                     }).catch(e => console.log('Failed to mark complete:', e));
                   }
@@ -2142,9 +2187,16 @@
                 window.lastQuestionTime = Date.now(); // Track when question was asked
                 console.log('🎤 LLM Response received, will speak:', question);
                 
-                console.log('🔊 Calling speakWithTTS...');
-                await speakWithTTS(question);
-                console.log('✅ speakWithTTS completed');
+                // Use avatar if available, otherwise fall back to TTS
+                if (avatarSynthesizer && isAvatarVideoDisplaying) {
+                  console.log('🎭 Speaking with Avatar...');
+                  await speakWithAvatar(question);
+                  console.log('✅ speakWithAvatar completed');
+                } else {
+                  console.log('🔊 Calling speakWithTTS...');
+                  await speakWithTTS(question);
+                  console.log('✅ speakWithTTS completed');
+                }
                 
               } catch (error) {
                 console.error('❌ Error processing response:', error);
