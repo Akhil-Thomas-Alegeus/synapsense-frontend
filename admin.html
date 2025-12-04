@@ -751,6 +751,251 @@
       display: none !important;
     }
 
+    /* Video Analysis Styles */
+    .video-analysis-section {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .video-analysis-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .behavioral-scores {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .behavioral-score-item {
+      background: var(--bg-dark);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .behavioral-score-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .behavioral-score-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .emotion-breakdown {
+      background: var(--bg-dark);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .emotion-breakdown-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+    }
+
+    .emotion-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .emotion-bar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .emotion-label {
+      width: 80px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .emotion-bar-container {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .emotion-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .emotion-bar.neutral { background: #94a3b8; }
+    .emotion-bar.happiness { background: #10b981; }
+    .emotion-bar.surprise { background: #f59e0b; }
+    .emotion-bar.sadness { background: #3b82f6; }
+    .emotion-bar.fear { background: #8b5cf6; }
+    .emotion-bar.anger { background: #ef4444; }
+    .emotion-bar.disgust { background: #6366f1; }
+    .emotion-bar.contempt { background: #ec4899; }
+
+    .emotion-value {
+      width: 45px;
+      font-size: 13px;
+      text-align: right;
+      color: var(--text-secondary);
+    }
+
+    .observations-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .observation-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      background: var(--bg-dark);
+      border-radius: 8px;
+    }
+
+    .observation-icon {
+      font-size: 16px;
+    }
+
+    .observation-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .combined-analysis-banner {
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .combined-score-display {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+      margin-bottom: 16px;
+    }
+
+    .combined-score-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .combined-score-number {
+      font-size: 36px;
+      font-weight: 700;
+    }
+
+    .combined-score-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    .combined-recommendation {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .combined-assessment {
+      font-size: 14px;
+      opacity: 0.9;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .analysis-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-analyze {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-analyze-video {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      color: white;
+    }
+
+    .btn-analyze-video:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+    }
+
+    .btn-analyze-combined {
+      background: linear-gradient(135deg, var(--success), #059669);
+      color: white;
+    }
+
+    .btn-analyze-combined:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-analyze:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .analysis-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .analysis-badge.complete {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .analysis-badge.pending {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .sidebar {
@@ -763,6 +1008,15 @@
 
       .content {
         padding: 20px;
+      }
+
+      .behavioral-scores {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .combined-score-display {
+        flex-direction: column;
+        gap: 20px;
       }
     }
   </style>
@@ -947,7 +1201,7 @@
 
   <script src="/azure-blob-storage.js"></script>
   <script>
-    const API_BASE = 'https://synapsencebackend-dzceeafvbwgca8br.westus2-01.azurewebsites.net/';
+    const API_BASE = 'https://synapsencebackend-dzceeafvbwgca8br.westus2-01.azurewebsites.net';
     
     let interviews = [];
     let analytics = {};
@@ -1274,6 +1528,10 @@
         const statusClass = interview.status === 'Completed' ? 'status-completed' : 'status-progress';
         const scoreClass = getScoreClass(interview.overallScore);
         const recClass = getRecommendationClass(interview.hiringRecommendation);
+        
+        // Show combined score if available, otherwise transcript score
+        const displayScore = interview.overallScore;
+        const behavioralScore = interview.behavioralScore;
 
         return `
           <tr onclick="viewDetails('${interview.sessionId}')">
@@ -1281,12 +1539,20 @@
             <td>${date}</td>
             <td>${interview.questionCount}</td>
             <td><span class="status-badge ${statusClass}">${interview.status}</span></td>
-            <td>${interview.overallScore ? `<span class="score-badge ${scoreClass}">${interview.overallScore}</span>` : '-'}</td>
+            <td>
+              ${displayScore ? `<span class="score-badge ${scoreClass}">${displayScore}</span>` : '-'}
+              ${behavioralScore ? `<span class="score-badge" style="margin-left: 4px; background: rgba(139, 92, 246, 0.15); color: #8b5cf6;" title="Behavioral Score">🎭${behavioralScore}</span>` : ''}
+            </td>
             <td class="recommendation-text ${recClass}">${interview.hiringRecommendation || '-'}</td>
             <td>
-              <button class="action-btn" onclick="event.stopPropagation(); analyzeInterview('${interview.sessionId}')">
-                ${interview.hasAnalysis ? '📊 View' : '🔍 Analyze'}
-              </button>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                ${interview.hasVideo ? '<span title="Has Video" style="opacity: 0.7;">🎬</span>' : ''}
+                ${interview.hasVideoAnalysis ? '<span title="Video Analyzed" style="color: #8b5cf6;">✓</span>' : ''}
+                ${interview.hasCombinedAnalysis ? '<span title="Combined Analysis" style="color: #10b981;">★</span>' : ''}
+                <button class="action-btn" onclick="event.stopPropagation(); viewDetails('${interview.sessionId}')">
+                  ${interview.hasAnalysis || interview.hasVideoAnalysis ? '📊 View' : '🔍 Analyze'}
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -1490,6 +1756,171 @@
 
         modalBody.innerHTML = `
           ${videoHTML}
+          
+          <!-- Analysis Action Buttons -->
+          <div class="detail-section">
+            <div class="video-analysis-header">
+              <h3 class="detail-section-title">🔬 Analysis Tools</h3>
+              <div class="analysis-buttons">
+                <button class="btn-analyze btn-analyze-video" onclick="analyzeVideo('${data.sessionId}')" ${!data.hasVideo ? 'disabled title="No video available"' : ''}>
+                  🎬 ${data.videoAnalysis ? 'Re-analyze' : 'Analyze'} Video
+                </button>
+                <button class="btn-analyze btn-analyze-combined" onclick="analyzeCombined('${data.sessionId}')">
+                  🧠 ${data.combinedAnalysis ? 'Re-run' : 'Run'} Combined Analysis
+                </button>
+                ${!data.analysis ? `<button class="btn btn-primary" onclick="analyzeInterview('${data.sessionId}')">📊 Analyze Transcript</button>` : ''}
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+              <span class="analysis-badge ${data.analysis ? 'complete' : 'pending'}">
+                ${data.analysis ? '✓' : '○'} Transcript Analysis
+              </span>
+              <span class="analysis-badge ${data.videoAnalysis ? 'complete' : 'pending'}">
+                ${data.videoAnalysis ? '✓' : '○'} Video Analysis
+              </span>
+              <span class="analysis-badge ${data.combinedAnalysis ? 'complete' : 'pending'}">
+                ${data.combinedAnalysis ? '✓' : '○'} Combined Analysis
+              </span>
+            </div>
+          </div>
+
+          ${data.combinedAnalysis ? `
+          <!-- Combined Analysis Banner -->
+          <div class="combined-analysis-banner">
+            <div class="combined-score-display">
+              <div class="combined-score-circle">
+                <div class="combined-score-number">${data.combinedAnalysis.overallScore}</div>
+                <div class="combined-score-label">Overall</div>
+              </div>
+              <div class="combined-score-circle">
+                <div class="combined-score-number">${data.combinedAnalysis.technicalScore}</div>
+                <div class="combined-score-label">Technical</div>
+              </div>
+              <div class="combined-score-circle">
+                <div class="combined-score-number">${data.combinedAnalysis.communicationScore}</div>
+                <div class="combined-score-label">Communication</div>
+              </div>
+              <div class="combined-score-circle">
+                <div class="combined-score-number">${data.combinedAnalysis.behavioralScore}</div>
+                <div class="combined-score-label">Behavioral</div>
+              </div>
+            </div>
+            <div class="combined-recommendation">${data.combinedAnalysis.hiringRecommendation}</div>
+            <p class="combined-assessment">${data.combinedAnalysis.overallAssessment}</p>
+            ${data.combinedAnalysis.keyStrengths?.length ? `
+              <div style="margin-top: 16px; text-align: left; display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;">
+                <div>
+                  <strong style="color: #10b981;">✓ Key Strengths:</strong>
+                  <ul style="margin: 8px 0; padding-left: 20px; opacity: 0.9;">
+                    ${data.combinedAnalysis.keyStrengths.map(s => `<li>${s}</li>`).join('')}
+                  </ul>
+                </div>
+                <div>
+                  <strong style="color: #f59e0b;">⚠ Key Concerns:</strong>
+                  <ul style="margin: 8px 0; padding-left: 20px; opacity: 0.9;">
+                    ${data.combinedAnalysis.keyConcerns?.map(c => `<li>${c}</li>`).join('') || '<li>None identified</li>'}
+                  </ul>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+          ` : ''}
+
+          ${data.videoAnalysis ? `
+          <!-- Video Analysis Section -->
+          <div class="video-analysis-section">
+            <h3 class="detail-section-title">🎬 Behavioral Video Analysis</h3>
+            
+            <div class="behavioral-scores">
+              <div class="behavioral-score-item">
+                <div class="behavioral-score-value" style="color: var(--primary)">${data.videoAnalysis.engagementScore}</div>
+                <div class="behavioral-score-label">Engagement</div>
+              </div>
+              <div class="behavioral-score-item">
+                <div class="behavioral-score-value" style="color: var(--success)">${data.videoAnalysis.confidenceScore}</div>
+                <div class="behavioral-score-label">Confidence</div>
+              </div>
+              <div class="behavioral-score-item">
+                <div class="behavioral-score-value" style="color: #8b5cf6">${data.videoAnalysis.emotionalStabilityScore}</div>
+                <div class="behavioral-score-label">Stability</div>
+              </div>
+              <div class="behavioral-score-item">
+                <div class="behavioral-score-value" style="color: #f59e0b">${data.videoAnalysis.overallBehavioralScore}</div>
+                <div class="behavioral-score-label">Overall</div>
+              </div>
+            </div>
+
+            <div class="emotion-breakdown">
+              <div class="emotion-breakdown-title">😊 Emotion Distribution</div>
+              <div class="emotion-bars">
+                <div class="emotion-bar-item">
+                  <span class="emotion-label">Neutral</span>
+                  <div class="emotion-bar-container">
+                    <div class="emotion-bar neutral" style="width: ${data.videoAnalysis.emotions.neutral}%"></div>
+                  </div>
+                  <span class="emotion-value">${data.videoAnalysis.emotions.neutral.toFixed(1)}%</span>
+                </div>
+                <div class="emotion-bar-item">
+                  <span class="emotion-label">Happiness</span>
+                  <div class="emotion-bar-container">
+                    <div class="emotion-bar happiness" style="width: ${data.videoAnalysis.emotions.happiness}%"></div>
+                  </div>
+                  <span class="emotion-value">${data.videoAnalysis.emotions.happiness.toFixed(1)}%</span>
+                </div>
+                <div class="emotion-bar-item">
+                  <span class="emotion-label">Surprise</span>
+                  <div class="emotion-bar-container">
+                    <div class="emotion-bar surprise" style="width: ${data.videoAnalysis.emotions.surprise}%"></div>
+                  </div>
+                  <span class="emotion-value">${data.videoAnalysis.emotions.surprise.toFixed(1)}%</span>
+                </div>
+                <div class="emotion-bar-item">
+                  <span class="emotion-label">Sadness</span>
+                  <div class="emotion-bar-container">
+                    <div class="emotion-bar sadness" style="width: ${data.videoAnalysis.emotions.sadness}%"></div>
+                  </div>
+                  <span class="emotion-value">${data.videoAnalysis.emotions.sadness.toFixed(1)}%</span>
+                </div>
+                <div class="emotion-bar-item">
+                  <span class="emotion-label">Fear</span>
+                  <div class="emotion-bar-container">
+                    <div class="emotion-bar fear" style="width: ${data.videoAnalysis.emotions.fear}%"></div>
+                  </div>
+                  <span class="emotion-value">${data.videoAnalysis.emotions.fear.toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+
+            ${data.videoAnalysis.keyObservations?.length ? `
+            <div style="margin-bottom: 16px;">
+              <div class="emotion-breakdown-title">🔍 Key Observations</div>
+              <div class="observations-list">
+                ${data.videoAnalysis.keyObservations.map(obs => `
+                  <div class="observation-item">
+                    <span class="observation-icon">💡</span>
+                    <span class="observation-text">${obs}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            ` : ''}
+
+            ${data.videoAnalysis.behavioralRecommendations?.length ? `
+            <div>
+              <div class="emotion-breakdown-title">📋 Recommendations</div>
+              <div class="observations-list">
+                ${data.videoAnalysis.behavioralRecommendations.map(rec => `
+                  <div class="observation-item">
+                    <span class="observation-icon">✅</span>
+                    <span class="observation-text">${rec}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            ` : ''}
+          </div>
+          ` : ''}
+
           ${analysisHTML}
           
           <div class="detail-section">
@@ -1516,7 +1947,7 @@
       const modalBody = document.getElementById('modalBody');
       
       modal.classList.remove('hidden');
-      modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analyzing interview with AI...</p></div>';
+      modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analyzing interview transcript with AI...</p></div>';
 
       try {
         const response = await fetch(`${API_BASE}/api/interview/analyze`, {
@@ -1536,6 +1967,74 @@
             <div class="empty-icon">❌</div>
             <div class="empty-title">Analysis Failed</div>
             <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Analyze video for behavioral insights
+    async function analyzeVideo(sessionId) {
+      const modal = document.getElementById('detailModal');
+      const modalBody = document.getElementById('modalBody');
+      
+      modal.classList.remove('hidden');
+      modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>🎬 Analyzing video for behavioral insights...</p><p style="font-size: 13px; margin-top: 8px; opacity: 0.7;">This may take a moment</p></div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/admin/interviews/${sessionId}/analyze-video`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Video analysis failed');
+        }
+
+        // Refresh data and show details
+        await refreshData();
+        await viewDetails(sessionId);
+      } catch (error) {
+        modalBody.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">❌</div>
+            <div class="empty-title">Video Analysis Failed</div>
+            <p>${error.message}</p>
+            <button class="btn btn-secondary" style="margin-top: 16px;" onclick="viewDetails('${sessionId}')">← Back to Details</button>
+          </div>
+        `;
+      }
+    }
+
+    // Run combined analysis (transcript + video)
+    async function analyzeCombined(sessionId) {
+      const modal = document.getElementById('detailModal');
+      const modalBody = document.getElementById('modalBody');
+      
+      modal.classList.remove('hidden');
+      modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>🧠 Running comprehensive analysis...</p><p style="font-size: 13px; margin-top: 8px; opacity: 0.7;">Combining transcript and behavioral insights</p></div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/admin/interviews/${sessionId}/analyze-combined`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Combined analysis failed');
+        }
+
+        // Refresh data and show details
+        await refreshData();
+        await viewDetails(sessionId);
+      } catch (error) {
+        modalBody.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">❌</div>
+            <div class="empty-title">Combined Analysis Failed</div>
+            <p>${error.message}</p>
+            <button class="btn btn-secondary" style="margin-top: 16px;" onclick="viewDetails('${sessionId}')">← Back to Details</button>
           </div>
         `;
       }
