@@ -100,8 +100,8 @@ const server = http.createServer((req, res) => {
   });
 });
 
-const PORT = 8080;
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Server running at http://127.0.0.1:${PORT}/`);
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}/`);
   console.log('Use this URL to access the page with microphone support');
 });

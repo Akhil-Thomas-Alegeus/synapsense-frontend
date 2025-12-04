@@ -1,4 +1,14 @@
 {
+  "name": "synapsense-frontend",
+  "version": "1.0.0",
+  "description": "Interview Intelligence Frontend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "dependencies": {
     "http-server": "^14.1.1",
     "selfsigned": "^5.2.0"
