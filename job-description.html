@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Add Job Description - Interview Intelligence</title>
+  <script src="config.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * {
@@ -429,6 +430,185 @@
       margin-bottom: 16px;
     }
 
+    /* Bulk Upload Styles */
+    .upload-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .upload-tab {
+      padding: 12px 24px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+
+    .upload-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .upload-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .bulk-upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 20px;
+      transition: all 0.2s;
+    }
+
+    .bulk-upload-area:hover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .bulk-upload-area.dragover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .bulk-textarea {
+      width: 100%;
+      min-height: 300px;
+      padding: 16px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 13px;
+      resize: vertical;
+      margin-bottom: 16px;
+    }
+
+    .bulk-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .bulk-preview {
+      background: var(--bg-dark);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .preview-item {
+      background: var(--bg-card-hover);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .preview-item-title {
+      font-weight: 500;
+    }
+
+    .preview-item-dept {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .preview-item-status {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .preview-item-status.pending {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
+    }
+
+    .preview-item-status.success {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .preview-item-status.error {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+
+    .processing-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .processing-modal {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      max-width: 400px;
+    }
+
+    .processing-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border-color);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .processing-text {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .processing-subtext {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .header {
@@ -488,6 +668,18 @@
       <span id="errorText">An error occurred. Please try again.</span>
     </div>
 
+    <!-- Upload Tabs -->
+    <div class="upload-tabs">
+      <button class="upload-tab active" data-tab="single" onclick="switchTab('single')">
+        📝 Single Entry
+      </button>
+      <button class="upload-tab" data-tab="bulk" onclick="switchTab('bulk')">
+        📦 Bulk Upload
+      </button>
+    </div>
+
+    <!-- Single Entry Tab -->
+    <div class="tab-content active" id="singleTab">
     <!-- Job Description Form -->
     <div class="form-card">
       <form id="jobDescriptionForm">
@@ -635,6 +827,88 @@
         </div>
       </form>
     </div>
+    </div><!-- End Single Tab -->
+
+    <!-- Bulk Upload Tab -->
+    <div class="tab-content" id="bulkTab">
+      <div class="form-card">
+        <div class="form-section">
+          <h2 class="form-section-title">📦 Bulk Upload Job Descriptions</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">
+            Paste multiple job descriptions below. Our AI will automatically parse and structure them into the required format.
+          </p>
+
+          <div class="bulk-upload-area" id="dropZone">
+            <div style="font-size: 48px; margin-bottom: 12px;">📄</div>
+            <p style="margin-bottom: 8px;">Drag & drop a file here or</p>
+            <label class="btn btn-secondary" style="cursor: pointer;">
+              <span>📁</span> Choose File
+              <input type="file" id="fileInput" accept=".txt,.json,.csv,.pdf" style="display: none;">
+            </label>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
+              Supports .txt, .json, .csv, .pdf files
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Or paste job descriptions here:</label>
+            <textarea class="bulk-textarea" id="bulkInput" placeholder="Paste one or more job descriptions here...
+
+Example format:
+---
+Job Title: Senior Software Engineer
+Department: Engineering
+Experience Level: Senior (5+ years)
+Employment Type: Full-time
+
+Description:
+We are looking for a Senior Software Engineer to join our team...
+
+Responsibilities:
+- Design and implement scalable solutions
+- Mentor junior developers
+- Participate in code reviews
+
+Required Skills:
+- C#, .NET Core
+- SQL Server
+- Azure
+
+Nice to Have:
+- React
+- Docker
+---
+
+You can paste multiple JDs separated by --- or just paste them one after another. The AI will parse them automatically."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="clearBulkInput()">
+              <span>🗑️</span> Clear
+            </button>
+            <button type="button" class="btn btn-primary" onclick="processBulkUpload()">
+              <span>🤖</span> Process with AI
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="form-section" id="previewSection" style="display: none;">
+          <h2 class="form-section-title">👀 Preview Parsed Job Descriptions</h2>
+          <div class="bulk-preview" id="bulkPreview">
+            <!-- Preview items will be inserted here -->
+          </div>
+          <div class="form-actions" style="margin-top: 16px;">
+            <button type="button" class="btn btn-secondary" onclick="cancelBulkUpload()">
+              <span>✕</span> Cancel
+            </button>
+            <button type="button" class="btn btn-success" onclick="saveBulkJobDescriptions()">
+              <span>💾</span> Save All (<span id="jdCount">0</span>)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div><!-- End Bulk Tab -->
 
     <!-- Saved Job Descriptions -->
     <div class="job-list-section">
@@ -652,6 +926,15 @@
       </div>
     </div>
   </main>
+
+  <!-- Processing Overlay -->
+  <div class="processing-overlay hidden" id="processingOverlay">
+    <div class="processing-modal">
+      <div class="processing-spinner"></div>
+      <div class="processing-text" id="processingText">Processing with AI...</div>
+      <div class="processing-subtext" id="processingSubtext">This may take a moment</div>
+    </div>
+  </div>
 
   <script>
     // Skills management
@@ -772,8 +1055,8 @@
       return 'jd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
-    // API base URL - Azure deployment
-    const API_BASE = 'https://synapsencebackend-dzceeafvbwgca8br.westus2-01.azurewebsites.net/api';
+    // API base URL - loaded from config.js
+    const API_BASE = window.AppConfig.API_BASE + '/api';
 
     async function saveJobDescription(data) {
       // Save to Cosmos DB via backend API
@@ -946,6 +1229,231 @@ Created: ${formatDate(job.createdAt)}
         month: 'short',
         day: 'numeric'
       });
+    }
+
+    // ============ Tab Switching ============
+    function switchTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.upload-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+      });
+      
+      // Update tab content
+      document.getElementById('singleTab').classList.toggle('active', tabName === 'single');
+      document.getElementById('bulkTab').classList.toggle('active', tabName === 'bulk');
+    }
+
+    // ============ Bulk Upload Functions ============
+    let parsedJobDescriptions = [];
+
+    // File drop zone
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) handleFileUpload(file);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleFileUpload(file);
+    });
+
+    // Store uploaded PDF for processing
+    let uploadedPdfFile = null;
+
+    function handleFileUpload(file) {
+      const fileName = file.name.toLowerCase();
+      
+      if (fileName.endsWith('.pdf')) {
+        // Store PDF file for later upload to backend
+        uploadedPdfFile = file;
+        document.getElementById('bulkInput').value = `📎 PDF File: ${file.name}\n\nClick "Process with AI" to extract and parse job descriptions from this PDF.`;
+        document.getElementById('bulkInput').disabled = true;
+      } else {
+        // For text files, read content directly
+        uploadedPdfFile = null;
+        document.getElementById('bulkInput').disabled = false;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.getElementById('bulkInput').value = e.target.result;
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    function clearBulkInput() {
+      document.getElementById('bulkInput').value = '';
+      document.getElementById('bulkInput').disabled = false;
+      document.getElementById('previewSection').style.display = 'none';
+      parsedJobDescriptions = [];
+      uploadedPdfFile = null;
+    }
+
+    function cancelBulkUpload() {
+      document.getElementById('previewSection').style.display = 'none';
+      parsedJobDescriptions = [];
+    }
+
+    async function processBulkUpload() {
+      showProcessing('Processing with AI...', 'Parsing and structuring job descriptions');
+
+      try {
+        let response;
+
+        if (uploadedPdfFile) {
+          // Upload PDF file to backend for parsing
+          const formData = new FormData();
+          formData.append('file', uploadedPdfFile);
+
+          response = await fetch(`${API_BASE}/job-descriptions/parse-pdf`, {
+            method: 'POST',
+            body: formData
+          });
+        } else {
+          // Process text input
+          const input = document.getElementById('bulkInput').value.trim();
+          if (!input) {
+            hideProcessing();
+            showError('Please paste some job descriptions or upload a file');
+            return;
+          }
+
+          response = await fetch(`${API_BASE}/job-descriptions/parse`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: input })
+          });
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to process: ${response.status}`);
+        }
+
+        const result = await response.json();
+        parsedJobDescriptions = result.jobDescriptions || [];
+
+        if (parsedJobDescriptions.length === 0) {
+          throw new Error('No job descriptions could be parsed from the input');
+        }
+
+        // Show preview
+        renderBulkPreview();
+        hideProcessing();
+        showSuccess(`Successfully parsed ${parsedJobDescriptions.length} job description(s)`);
+
+      } catch (error) {
+        console.error('Bulk processing error:', error);
+        hideProcessing();
+        showError(error.message || 'Failed to process job descriptions');
+      }
+    }
+
+    function renderBulkPreview() {
+      const previewSection = document.getElementById('previewSection');
+      const previewContainer = document.getElementById('bulkPreview');
+      const countSpan = document.getElementById('jdCount');
+
+      countSpan.textContent = parsedJobDescriptions.length;
+
+      previewContainer.innerHTML = parsedJobDescriptions.map((jd, index) => `
+        <div class="preview-item" data-index="${index}">
+          <div>
+            <div class="preview-item-title">${escapeHtml(jd.jobTitle || 'Untitled Position')}</div>
+            <div class="preview-item-dept">${escapeHtml(jd.department || 'No Department')} • ${escapeHtml(jd.experienceLevel || 'Not specified')}</div>
+          </div>
+          <span class="preview-item-status pending">Ready to save</span>
+        </div>
+      `).join('');
+
+      previewSection.style.display = 'block';
+    }
+
+    async function saveBulkJobDescriptions() {
+      if (parsedJobDescriptions.length === 0) {
+        showError('No job descriptions to save');
+        return;
+      }
+
+      showProcessing('Saving job descriptions...', `0 of ${parsedJobDescriptions.length} saved`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < parsedJobDescriptions.length; i++) {
+        const jd = parsedJobDescriptions[i];
+        const previewItem = document.querySelector(`.preview-item[data-index="${i}"]`);
+        const statusSpan = previewItem?.querySelector('.preview-item-status');
+
+        try {
+          // Add metadata
+          jd.id = generateId();
+          jd.createdAt = new Date().toISOString();
+          jd.updatedAt = new Date().toISOString();
+          jd.createdBy = 'bulk-upload';
+
+          const response = await fetch(`${API_BASE}/job-descriptions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(jd)
+          });
+
+          if (response.ok) {
+            successCount++;
+            if (statusSpan) {
+              statusSpan.textContent = 'Saved ✓';
+              statusSpan.className = 'preview-item-status success';
+            }
+          } else {
+            throw new Error('Failed to save');
+          }
+        } catch (error) {
+          failCount++;
+          if (statusSpan) {
+            statusSpan.textContent = 'Failed ✕';
+            statusSpan.className = 'preview-item-status error';
+          }
+        }
+
+        updateProcessingText('Saving job descriptions...', `${successCount + failCount} of ${parsedJobDescriptions.length} processed`);
+      }
+
+      hideProcessing();
+
+      if (failCount === 0) {
+        showSuccess(`Successfully saved all ${successCount} job description(s)`);
+        clearBulkInput();
+        loadJobDescriptions();
+      } else {
+        showError(`Saved ${successCount}, failed ${failCount}`);
+      }
+    }
+
+    function showProcessing(text, subtext) {
+      document.getElementById('processingText').textContent = text;
+      document.getElementById('processingSubtext').textContent = subtext;
+      document.getElementById('processingOverlay').classList.remove('hidden');
+    }
+
+    function updateProcessingText(text, subtext) {
+      document.getElementById('processingText').textContent = text;
+      document.getElementById('processingSubtext').textContent = subtext;
+    }
+
+    function hideProcessing() {
+      document.getElementById('processingOverlay').classList.add('hidden');
     }
 
     // Load job descriptions on page load

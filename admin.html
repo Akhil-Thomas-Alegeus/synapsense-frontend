@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interview Intelligence - Admin Dashboard</title>
+  <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * {
@@ -255,9 +256,18 @@
 
     .invite-form {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr auto;
+      grid-template-columns: repeat(2, 1fr);
       gap: 16px;
       margin-bottom: 24px;
+    }
+
+    .invite-form .form-group:last-of-type {
+      grid-column: span 2;
+    }
+
+    .invite-form .btn-generate {
+      grid-column: span 2;
+      justify-self: start;
     }
 
     .form-group {
@@ -284,6 +294,101 @@
     .form-input:focus {
       outline: none;
       border-color: var(--primary);
+    }
+
+    .jd-link {
+      font-size: 12px;
+      color: var(--primary);
+      text-decoration: none;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .jd-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Resume Upload Styles */
+    .resume-upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg-dark);
+    }
+
+    .resume-upload-area:hover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .resume-upload-area.drag-over {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .resume-upload-area.has-file {
+      border-style: solid;
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .resume-upload-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .upload-icon {
+      font-size: 32px;
+    }
+
+    .upload-text {
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .upload-hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .resume-file-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .resume-file-info .file-name {
+      font-size: 14px;
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    .btn-remove-file {
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-remove-file:hover {
+      background: #dc2626;
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     .btn-generate {
@@ -338,6 +443,14 @@
 
     .invite-name {
       font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .resume-badge {
+      font-size: 14px;
+      cursor: help;
     }
 
     .invite-email {
@@ -1119,6 +1232,28 @@
               <label class="form-label">Position</label>
               <input type="text" class="form-input" id="candidatePosition" placeholder=".NET Developer">
             </div>
+            <div class="form-group">
+              <label class="form-label">Job Description</label>
+              <select class="form-input" id="jobDescriptionSelect">
+                <option value="">-- Select Job Description --</option>
+              </select>
+              <a href="job-description.html" class="jd-link" target="_blank">+ Add New Job Description</a>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label class="form-label">Resume (Optional)</label>
+              <div class="resume-upload-area" id="resumeUploadArea">
+                <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.txt" style="display: none;">
+                <div class="resume-upload-content" id="resumeUploadContent">
+                  <span class="upload-icon">📄</span>
+                  <span class="upload-text">Click to upload or drag & drop resume</span>
+                  <span class="upload-hint">PDF, DOC, DOCX, or TXT (max 5MB)</span>
+                </div>
+                <div class="resume-file-info hidden" id="resumeFileInfo">
+                  <span class="file-name" id="resumeFileName"></span>
+                  <button type="button" class="btn-remove-file" onclick="removeResume(event)">✕</button>
+                </div>
+              </div>
+            </div>
             <button class="btn-generate" onclick="generateInvite()">
               ✨ Generate Invite
             </button>
@@ -1204,12 +1339,14 @@
 
   <script src="/azure-blob-storage.js"></script>
   <script>
-    const API_BASE = 'https://synapsencebackend-dzceeafvbwgca8br.westus2-01.azurewebsites.net';
+    // API Base URL for backend - loaded from config.js
+    const API_BASE = window.AppConfig.API_BASE;
     
     let interviews = [];
     let analytics = {};
     let inviteCodes = [];
     let scoreChart, recommendationChart, skillsChart;
+    let uploadedResumeFile = null; // Store the uploaded resume file
 
     // Initialize dashboard
     async function init() {
@@ -1223,7 +1360,126 @@
       
       await refreshData();
       await loadInviteCodes();
+      await loadJobDescriptions();
       setupEventListeners();
+      setupResumeUpload();
+    }
+
+    // ============ Resume Upload ============
+    
+    function setupResumeUpload() {
+      const uploadArea = document.getElementById('resumeUploadArea');
+      const fileInput = document.getElementById('resumeFile');
+      
+      // Click to upload
+      uploadArea.addEventListener('click', () => {
+        if (!uploadedResumeFile) {
+          fileInput.click();
+        }
+      });
+      
+      // File selected
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleResumeFile(e.target.files[0]);
+        }
+      });
+      
+      // Drag and drop
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+      });
+      
+      uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-over');
+      });
+      
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleResumeFile(e.dataTransfer.files[0]);
+        }
+      });
+    }
+    
+    function handleResumeFile(file) {
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
+      const extension = '.' + file.name.split('.').pop().toLowerCase();
+      
+      if (!allowedTypes.includes(extension)) {
+        alert('Invalid file type. Please upload PDF, DOC, DOCX, or TXT files.');
+        return;
+      }
+      
+      if (file.size > maxSize) {
+        alert('File is too large. Maximum size is 5MB.');
+        return;
+      }
+      
+      uploadedResumeFile = file;
+      
+      // Update UI
+      const uploadArea = document.getElementById('resumeUploadArea');
+      const uploadContent = document.getElementById('resumeUploadContent');
+      const fileInfo = document.getElementById('resumeFileInfo');
+      const fileName = document.getElementById('resumeFileName');
+      
+      uploadArea.classList.add('has-file');
+      uploadContent.classList.add('hidden');
+      fileInfo.classList.remove('hidden');
+      fileName.textContent = `📄 ${file.name}`;
+    }
+    
+    function removeResume(event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      
+      uploadedResumeFile = null;
+      document.getElementById('resumeFile').value = '';
+      
+      const uploadArea = document.getElementById('resumeUploadArea');
+      const uploadContent = document.getElementById('resumeUploadContent');
+      const fileInfo = document.getElementById('resumeFileInfo');
+      
+      uploadArea.classList.remove('has-file');
+      uploadContent.classList.remove('hidden');
+      fileInfo.classList.add('hidden');
+    }
+    
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(e);
+        reader.readAsText(file);
+      });
+    }
+
+    // ============ Job Description Management ============
+    
+    async function loadJobDescriptions() {
+      const select = document.getElementById('jobDescriptionSelect');
+      try {
+        const response = await fetch(`${API_BASE}/api/job-descriptions`);
+        if (response.ok) {
+          const jobDescriptions = await response.json();
+          // Clear existing options except the first one
+          select.innerHTML = '<option value="">-- Select Job Description --</option>';
+          
+          jobDescriptions.forEach(jd => {
+            const option = document.createElement('option');
+            option.value = jd.id;
+            option.textContent = `${jd.jobTitle || jd.title || 'Untitled'} (${jd.department || 'No Dept'})`;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load job descriptions:', error);
+      }
     }
 
     // ============ Invite Code Management ============
@@ -1264,11 +1520,13 @@
           statusText = 'Expired';
         }
         
+        const resumeBadge = invite.hasResume ? `<span class="resume-badge" title="${invite.resumeFileName || 'Resume attached'}">📄</span>` : '';
+        
         return `
           <div class="invite-item">
             <div class="invite-code">${invite.code}</div>
             <div class="invite-info">
-              <span class="invite-name">${invite.candidateName}</span>
+              <span class="invite-name">${invite.candidateName} ${resumeBadge}</span>
               <span class="invite-email">${invite.candidateEmail}</span>
             </div>
             <span class="invite-position">${invite.position}</span>
@@ -1284,6 +1542,7 @@
       const name = document.getElementById('candidateName').value.trim();
       const email = document.getElementById('candidateEmail').value.trim();
       const position = document.getElementById('candidatePosition').value.trim();
+      const jobDescriptionId = document.getElementById('jobDescriptionSelect').value;
       
       if (!name || !email || !position) {
         alert('Please fill in all fields');
@@ -1291,13 +1550,61 @@
       }
       
       try {
+        let resumeId = null;
+        let resumeFileName = null;
+        
+        // If resume is uploaded, parse it first using LLM
+        if (uploadedResumeFile) {
+          resumeFileName = uploadedResumeFile.name;
+          
+          // Show parsing status
+          const generateBtn = document.querySelector('.btn-generate');
+          const originalText = generateBtn.textContent;
+          generateBtn.textContent = '🔄 Parsing resume...';
+          generateBtn.disabled = true;
+          
+          try {
+            const resumeText = await readFileAsText(uploadedResumeFile);
+            
+            const parseResponse = await fetch(`${API_BASE}/api/resumes/parse`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                resumeText: resumeText,
+                candidateName: name,
+                candidateEmail: email,
+                fileName: resumeFileName
+              })
+            });
+            
+            if (parseResponse.ok) {
+              const parsedResume = await parseResponse.json();
+              resumeId = parsedResume.id;
+              console.log('Resume parsed successfully:', parsedResume);
+            } else {
+              const error = await parseResponse.text();
+              console.warn('Resume parsing failed, continuing without resume:', error);
+              // Continue without resume if parsing fails
+            }
+          } catch (parseError) {
+            console.warn('Resume parsing error, continuing without resume:', parseError);
+          } finally {
+            generateBtn.textContent = originalText;
+            generateBtn.disabled = false;
+          }
+        }
+        
+        // Now create the invite with the resumeId
         const response = await fetch(`${API_BASE}/api/admin/invites`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             candidateName: name,
             candidateEmail: email,
-            position: position
+            position: position,
+            jobDescriptionId: jobDescriptionId || null,
+            resumeId: resumeId,
+            resumeFileName: resumeFileName
           })
         });
         
@@ -1308,13 +1615,16 @@
           document.getElementById('candidateName').value = '';
           document.getElementById('candidateEmail').value = '';
           document.getElementById('candidatePosition').value = '';
+          document.getElementById('jobDescriptionSelect').value = '';
+          removeResume(); // Clear the resume upload
           
           // Reload invites
           await loadInviteCodes();
           
           // Show success and copy to clipboard
           copyInviteCode(data.code);
-          alert(`✅ Invite code generated: ${data.code}\n\nCode copied to clipboard!\n\nSend this to ${name} at ${email}`);
+          const resumeStatus = resumeId ? '\n📄 Resume parsed and stored!' : '';
+          alert(`✅ Invite code generated: ${data.code}\n\nCode copied to clipboard!${resumeStatus}\n\nSend this to ${name} at ${email}`);
         } else {
           const error = await response.text();
           alert('Failed to generate invite: ' + error);

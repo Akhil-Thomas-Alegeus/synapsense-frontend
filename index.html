@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Interview Room</title>
+    <script src="config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       * {
@@ -1114,8 +1115,8 @@
     <script>
       const sdk = SpeechSDK;
       
-      // API Base URL for backend
-      const API_BASE = 'https://synapsencebackend-dzceeafvbwgca8br.westus2-01.azurewebsites.net';
+      // API Base URL for backend - loaded from config.js
+      const API_BASE = window.AppConfig.API_BASE;
 
       // DOM elements
       const startBtn = document.getElementById('start');
