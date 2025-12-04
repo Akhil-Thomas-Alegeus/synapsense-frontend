@@ -1166,6 +1166,9 @@
       let meetingStartTime = null;
       let meetingTimer = null;
       
+      // Avatar display tracking - only use avatar audio when video is actually showing
+      let isAvatarVideoDisplaying = false;
+      
       // Interview session tracking
       let interviewSessionId = null;
       let questionCount = 0;
@@ -1668,7 +1671,13 @@
               aiPlaceholder.style.display = 'none';
               avatarVideo.autoplay = true;
               avatarVideo.playsInline = true;
-              avatarVideo.play().catch(e => console.log('Video autoplay issue:', e));
+              avatarVideo.play().then(() => {
+                console.log('✅🎭 Avatar VIDEO IS NOW DISPLAYING');
+                isAvatarVideoDisplaying = true;
+              }).catch(e => {
+                console.log('Video autoplay issue:', e);
+                isAvatarVideoDisplaying = false;
+              });
             }
             if (event.track.kind === 'audio') {
               console.log('🎭 Avatar: Setting audio srcObject');
@@ -1690,8 +1699,10 @@
             } else if (peerConnection.iceConnectionState === 'disconnected' || 
                        peerConnection.iceConnectionState === 'failed') {
               avatarStatus.textContent = 'Disconnected';
+              isAvatarVideoDisplaying = false; // Mark avatar as not displaying
               console.error('🎭 Avatar: ICE connection failed or disconnected');
-              showToast('⚠️ Avatar connection failed - your network may be blocking port 3478. Using audio-only TTS.');
+              console.log('⚠️ isAvatarVideoDisplaying set to FALSE');
+              showToast('⚠️ Avatar connection failed - using audio-only TTS.');
             }
           };
           
@@ -1789,7 +1800,9 @@
           startAvatarBtn.disabled = false;
           stopAvatarBtn.disabled = true;
           
+          isAvatarVideoDisplaying = false; // Reset avatar display flag
           audioUnlocked = false;
+          console.log('🎭 Avatar stopped - isAvatarVideoDisplaying set to FALSE');
         } catch (error) {
           console.error('Failed to stop avatar:', error);
         }
@@ -1797,11 +1810,22 @@
 
       async function speakWithAvatar(text) {
         console.log('🎭➡️ speakWithAvatar called with:', text.substring(0, 60) + '...');
+        console.log('📊 isAvatarVideoDisplaying:', isAvatarVideoDisplaying);
         
-        // If avatar is not connected, use TTS fallback
+        // CRITICAL CHECK: Only use avatar if the video is actually displaying
+        if (!isAvatarVideoDisplaying) {
+          console.log('⚠️🔄 SWITCH TO TTS: Avatar video is NOT displaying');
+          console.log('📢 Reason: isAvatarVideoDisplaying = false');
+          showToast('Using audio mode (avatar not visible)', 2000);
+          await speakWithTTS(text);
+          return;
+        }
+        
+        // If avatar synthesizer is not available, use TTS fallback
         if (!avatarSynthesizer) {
           console.log('⚠️🔄 SWITCH TO TTS: No avatar synthesizer available');
           console.log('📢 Reason: avatarSynthesizer is null/undefined');
+          isAvatarVideoDisplaying = false; // Reset flag
           showToast('Using audio-only mode (no avatar)', 2000);
           await speakWithTTS(text);
           return;
@@ -1812,12 +1836,13 @@
             peerConnection.connectionState === 'failed') {
           console.log('⚠️🔄 SWITCH TO TTS: Peer connection not ready');
           console.log('📢 Reason: peerConnection state =', peerConnection?.connectionState || 'null');
+          isAvatarVideoDisplaying = false; // Reset flag
           showToast('Avatar disconnected, using audio', 2000);
           await speakWithTTS(text);
           return;
         }
 
-        console.log('✅ Avatar ready - using avatar for speech');
+        console.log('✅🎭 Avatar VIDEO IS DISPLAYING - using avatar for speech (no TTS)');
         console.log('📊 PeerConnection state:', peerConnection.connectionState);
         console.log('📊 ICE connection state:', peerConnection.iceConnectionState);
 
@@ -1853,6 +1878,7 @@
             console.log('⚠️🔄 SWITCH TO TTS: Avatar speech was canceled');
             console.log('📢 Cancellation reason:', cancellation.reason);
             console.log('📢 Error details:', cancellation.errorDetails);
+            isAvatarVideoDisplaying = false; // Mark avatar as not working
             setAISpeaking(false);
             avatarStatus.textContent = 'Error';
             showToast('Avatar error, using audio', 2000);
@@ -1869,6 +1895,7 @@
           console.error('❌🎭 Avatar: speakTextAsync threw exception:', error.message);
           console.log('⚠️🔄 SWITCH TO TTS: Avatar threw an error');
           console.log('📢 Error:', error);
+          isAvatarVideoDisplaying = false; // Mark avatar as not working
           setAISpeaking(false);
           avatarStatus.textContent = 'Error';
           showToast('Avatar error, using audio', 2000);
