@@ -124,6 +124,33 @@
         box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
       }
 
+      /* AI Listening State - shows when AI is interrupted and listening */
+      .participant-tile.listening {
+        border-color: #3b82f6;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+      }
+
+      .participant-tile.listening::after {
+        content: '👂 Listening...';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(59, 130, 246, 0.9);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 24px;
+        font-size: 16px;
+        font-weight: 600;
+        z-index: 10;
+        animation: pulse-listen 1.5s ease-in-out infinite;
+      }
+
+      @keyframes pulse-listen {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.8; }
+      }
+
       .participant-tile video {
         width: 100%;
         height: 100%;
@@ -633,6 +660,20 @@
         background: #ef4444;
       }
 
+      .control-btn.interrupt {
+        background: #f59e0b;
+        animation: pulse-interrupt 1s infinite;
+      }
+
+      .control-btn.interrupt:hover {
+        background: #d97706;
+      }
+
+      @keyframes pulse-interrupt {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+        50% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+      }
+
       .control-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
@@ -662,6 +703,13 @@
 
       #avatarVideo {
         display: none;
+        /* Optimize for smooth playback */
+        will-change: contents;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        /* Reduce visual stuttering */
+        image-rendering: optimizeSpeed;
+        -webkit-transform: translate3d(0,0,0);
       }
 
       #avatarVideo.connected {
@@ -1076,6 +1124,14 @@
           <span class="control-btn-label">Stop</span>
         </button>
 
+        <!-- Interrupt AI Speech Button -->
+        <button class="control-btn interrupt" id="interruptBtn" style="display: none;" title="Interrupt AI">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 6h12v12H6z"/>
+          </svg>
+          <span class="control-btn-label">Stop AI</span>
+        </button>
+
         <div class="control-divider"></div>
 
         <button class="control-btn primary" id="start" title="Start Recording">
@@ -1171,6 +1227,9 @@
       
       // Avatar display tracking - only use avatar audio when video is actually showing
       let isAvatarVideoDisplaying = false;
+      
+      // Global speaking state - track when AI is speaking (avatar or TTS)
+      let isSpeaking = false;
       
       // Interview session tracking
       let interviewSessionId = null;
@@ -1442,17 +1501,224 @@
         const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
         const secs = (elapsed % 60).toString().padStart(2, '0');
         meetingTimeDisplay.textContent = `${mins}:${secs}`;
+        
+        // Check time limit
+        const elapsedMinutes = elapsed / 60;
+        const remainingMinutes = maxDurationMinutes - elapsedMinutes;
+        
+        // Warning at 5 minutes remaining
+        if (remainingMinutes <= 5 && remainingMinutes > 4.9) {
+          showToast('⏰ 5 minutes remaining in the interview', 4000);
+          meetingTimeDisplay.style.color = '#fbbf24'; // Yellow warning
+        }
+        
+        // Warning at 1 minute remaining
+        if (remainingMinutes <= 1 && remainingMinutes > 0.9) {
+          showToast('⏰ 1 minute remaining!', 3000);
+          meetingTimeDisplay.style.color = '#f87171'; // Red warning
+        }
+        
+        // Time's up!
+        if (elapsedMinutes >= maxDurationMinutes) {
+          endInterviewDueToTimeLimit();
+        }
+      }
+      
+      // End interview when time limit is reached
+      async function endInterviewDueToTimeLimit() {
+        console.log('⏰ Interview time limit reached!');
+        
+        // Stop the timer
+        if (meetingTimer) {
+          clearInterval(meetingTimer);
+          meetingTimer = null;
+        }
+        
+        // Stop any ongoing AI speech
+        await interruptAISpeech(false);
+        
+        // Speak a closing message
+        const closingMessage = "We've reached the end of our allotted time for this interview. Thank you so much for your thoughtful responses today. We'll be in touch soon with next steps. Have a great day!";
+        questionDiv.innerText = closingMessage;
+        
+        await speakWithAvatar(closingMessage);
+        
+        // End the interview after the closing message
+        setTimeout(() => {
+          endInterview('time_limit');
+        }, 8000); // Give time for closing message
+      }
+      
+      // Centralized interview end function
+      async function endInterview(reason = 'manual') {
+        console.log(`🏁 Ending interview. Reason: ${reason}`);
+        
+        // Stop avatar and recognition
+        stopAvatar();
+        if (recognizer) {
+          recognizer.stopContinuousRecognitionAsync();
+        }
+        
+        // Stop timer if still running
+        if (meetingTimer) {
+          clearInterval(meetingTimer);
+          meetingTimer = null;
+        }
+        
+        // Stop video recording and upload
+        if (isRecording) {
+          stopVideoRecording();
+        }
+        
+        // Calculate final duration
+        const duration = meetingStartTime ? Math.floor((Date.now() - meetingStartTime) / 1000) : 0;
+        
+        // Mark session complete on backend
+        if (interviewSessionId) {
+          try {
+            await fetch(`${API_BASE}/api/interview/end`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                sessionId: interviewSessionId,
+                reason: reason,
+                duration: duration,
+                questionCount: questionCount
+              })
+            });
+            console.log('✅ Interview session ended on backend');
+          } catch (err) {
+            console.warn('Failed to end session on backend:', err);
+          }
+        }
+        
+        // Show completion message based on reason
+        let completionMessage = '';
+        switch (reason) {
+          case 'time_limit':
+            completionMessage = '⏰ Interview completed (time limit reached)';
+            break;
+          case 'question_limit':
+            completionMessage = '✅ Interview completed (all questions answered)';
+            break;
+          case 'manual':
+          default:
+            completionMessage = '✅ Interview ended';
+        }
+        
+        showToast(completionMessage, 5000);
+        avatarStatus.textContent = 'Interview Complete';
+        
+        // Optionally redirect or show summary
+        // window.location.href = '/interview-complete.html';
       }
 
       function setAISpeaking(speaking) {
+        const interruptBtn = document.getElementById('interruptBtn');
         if (speaking) {
           aiPlaceholder.classList.add('speaking');
           aiTile.classList.add('speaking');
+          aiTile.classList.remove('listening'); // Remove listening state when speaking
+          // Show interrupt button when AI is speaking
+          if (interruptBtn) interruptBtn.style.display = 'flex';
         } else {
           aiPlaceholder.classList.remove('speaking');
           aiTile.classList.remove('speaking');
+          // Hide interrupt button when AI stops
+          if (interruptBtn) interruptBtn.style.display = 'none';
         }
       }
+
+      // Interrupt AI speech
+      // voiceInterrupt: true = user spoke to interrupt, false = button/key press
+      async function interruptAISpeech(voiceInterrupt = false) {
+        console.log('🛑 Interrupting AI speech...', voiceInterrupt ? '(voice)' : '(manual)');
+        
+        // 1. IMMEDIATE: Mute audio for instant silence
+        if (avatarAudio) {
+          avatarAudio.muted = true;
+          console.log('🔇 Audio muted immediately');
+        }
+        
+        // 2. Stop Avatar speech (if using avatar)
+        if (avatarSynthesizer) {
+          try {
+            // Try stopSpeakingAsync first
+            if (typeof avatarSynthesizer.stopSpeakingAsync === 'function') {
+              avatarSynthesizer.stopSpeakingAsync()
+                .then(() => console.log('✅ Avatar stopSpeakingAsync completed'))
+                .catch(e => console.log('stopSpeakingAsync error:', e.message));
+            }
+            
+            // Also try to cancel any pending synthesis
+            if (typeof avatarSynthesizer.close === 'function') {
+              // Don't close - we want to reuse it, but cancellation might help
+              console.log('🎭 Avatar synthesizer available for next speech');
+            }
+          } catch (e) {
+            console.log('Avatar stop error:', e.message);
+          }
+        }
+        
+        // 3. Stop TTS speech (if using TTS fallback)
+        if (speechSynthesizer) {
+          try {
+            speechSynthesizer.close();
+            speechSynthesizer = null;
+            console.log('✅ TTS speech stopped');
+          } catch (e) {
+            console.log('TTS stop error:', e.message);
+          }
+        }
+        
+        // 4. Reset speaking state
+        setAISpeaking(false);
+        isSpeaking = false;
+        
+        // 5. Unmute audio after short delay (so next speech works)
+        setTimeout(() => {
+          if (avatarAudio && audioUnlocked) {
+            avatarAudio.muted = false;
+            console.log('🔊 Audio unmuted');
+          }
+        }, 500);
+        
+        // 6. Set appropriate status based on interrupt type
+        if (voiceInterrupt) {
+          wasInterrupted = true; // Mark that we were interrupted by voice
+          pendingUserSpeech = null; // Clear any pending speech - we're starting fresh
+          avatarStatus.textContent = 'Listening...';
+          console.log('✅ AI interrupted by voice - now listening');
+          
+          // Add visual "listening" state to AI tile
+          aiTile.classList.add('listening');
+          
+          // Remove listening state after user stops speaking (or timeout)
+          setTimeout(() => {
+            aiTile.classList.remove('listening');
+          }, 4000);
+        } else {
+          // Manual interrupt - clear state
+          wasInterrupted = false;
+          pendingUserSpeech = null;
+          avatarStatus.textContent = 'Ready';
+          showToast('✅ AI stopped', 1500);
+          console.log('✅ AI speech interrupted manually');
+          aiTile.classList.remove('listening');
+        }
+      }
+
+      // Wire up interrupt button (manual = false)
+      document.getElementById('interruptBtn')?.addEventListener('click', () => interruptAISpeech(false));
+
+      // Keyboard shortcut to interrupt AI (Escape key) - manual = false
+      document.addEventListener('keydown', (e) => {
+        // Only interrupt if AI is speaking and not in setup overlay
+        if (e.key === 'Escape' && aiTile.classList.contains('speaking')) {
+          e.preventDefault();
+          interruptAISpeech(false);
+        }
+      });
 
       function setUserSpeaking(speaking) {
         if (speaking) {
@@ -1689,40 +1955,85 @@
               urls: [iceServerUrl],
               username: iceServerUsername,
               credential: iceServerCredential
-            }]
+            }],
+            // Optimize for quality over latency
+            bundlePolicy: 'max-bundle',
+            rtcpMuxPolicy: 'require'
           });
 
           peerConnection.ontrack = function(event) {
             console.log('🎭 Avatar: ontrack event received:', event.track.kind);
+            
+            // Try to increase jitter buffer for smoother playback
+            const receiver = event.receiver;
+            if (receiver && receiver.jitterBufferTarget !== undefined) {
+              // Request larger jitter buffer (in milliseconds)
+              // Increased to 500ms to handle 38ms jitter + packet loss
+              receiver.jitterBufferTarget = 500; 
+              console.log('🎭 Set jitter buffer target to 500ms');
+            }
+            
+            // Also try to set playout delay hint if available
+            if (receiver && receiver.playoutDelayHint !== undefined) {
+              receiver.playoutDelayHint = 0.3; // 300ms playout delay
+              console.log('🎭 Set playout delay hint to 300ms');
+            }
+            
             if (event.track.kind === 'video') {
               console.log('🎭 Avatar: Setting video srcObject');
-              avatarVideo.srcObject = event.streams[0];
+              
+              // Apply playback delay for buffering
+              const stream = event.streams[0];
+              avatarVideo.srcObject = stream;
               avatarVideo.muted = true;
               avatarVideo.classList.add('connected');
               aiPlaceholder.style.display = 'none';
+              
+              // Optimize video element for smooth playback
               avatarVideo.autoplay = true;
               avatarVideo.playsInline = true;
+              avatarVideo.disablePictureInPicture = true;
+              avatarVideo.preload = 'auto';
+              
+              // Request high performance rendering
+              if (avatarVideo.style) {
+                avatarVideo.style.objectFit = 'cover';
+              }
               
               // Set flag immediately when we get video track - don't wait for play promise
               isAvatarVideoDisplaying = true;
               console.log('✅🎭 Avatar VIDEO TRACK RECEIVED - isAvatarVideoDisplaying = true');
               
-              avatarVideo.play().then(() => {
-                console.log('✅🎭 Avatar VIDEO IS NOW PLAYING');
-              }).catch(e => {
-                console.log('Video autoplay issue:', e);
-                // Don't set to false here - the track is still valid
-              });
+              // Add delay before playing to allow buffer to fill
+              // Increased to 300ms to handle packet loss
+              setTimeout(() => {
+                avatarVideo.play().then(() => {
+                  console.log('✅🎭 Avatar VIDEO IS NOW PLAYING (with 300ms buffer)');
+                  
+                  // Monitor buffer health
+                  if (avatarVideo.buffered && avatarVideo.buffered.length > 0) {
+                    console.log('🎭 Video buffer:', avatarVideo.buffered.end(0) - avatarVideo.currentTime, 'seconds');
+                  }
+                }).catch(e => {
+                  console.log('Video autoplay issue:', e);
+                  // Don't set to false here - the track is still valid
+                });
+              }, 300); // 300ms initial buffer delay
             }
             if (event.track.kind === 'audio') {
               console.log('🎭 Avatar: Setting audio srcObject');
               avatarAudio.srcObject = event.streams[0];
               avatarAudio.autoplay = true;
-              if (audioUnlocked) {
-                avatarAudio.muted = false;
-                avatarAudio.volume = 1.0;
-                avatarAudio.play().catch(e => console.log('Audio play failed:', e));
-              }
+              avatarAudio.preload = 'auto';
+              
+              // Sync audio with video delay
+              setTimeout(() => {
+                if (audioUnlocked) {
+                  avatarAudio.muted = false;
+                  avatarAudio.volume = 1.0;
+                  avatarAudio.play().catch(e => console.log('Audio play failed:', e));
+                }
+              }, 300); // Match video buffer delay (300ms)
             }
           };
 
@@ -1747,10 +2058,67 @@
           
           peerConnection.onconnectionstatechange = function() {
             console.log('🎭 Avatar: Connection state:', peerConnection.connectionState);
+            
+            // Start monitoring stats when connected
+            if (peerConnection.connectionState === 'connected') {
+              startQualityMonitoring();
+            }
           };
 
-          peerConnection.addTransceiver('video', { direction: 'sendrecv' });
-          peerConnection.addTransceiver('audio', { direction: 'sendrecv' });
+          // Quality monitoring function
+          function startQualityMonitoring() {
+            setInterval(async () => {
+              if (!peerConnection || peerConnection.connectionState !== 'connected') return;
+              
+              try {
+                const stats = await peerConnection.getStats();
+                stats.forEach(report => {
+                  if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                    const packetsLost = report.packetsLost || 0;
+                    const packetsReceived = report.packetsReceived || 0;
+                    const jitter = report.jitter || 0;
+                    const framesDropped = report.framesDropped || 0;
+                    const framesReceived = report.framesReceived || 0;
+                    
+                    // Log warning if quality is degrading
+                    if (packetsLost > 10 || jitter > 0.05) {
+                      console.warn('🎭 Video quality warning:', {
+                        packetsLost,
+                        jitter: (jitter * 1000).toFixed(1) + 'ms',
+                        framesDropped,
+                        framesReceived
+                      });
+                    }
+                  }
+                });
+              } catch (e) {
+                // Ignore stats errors
+              }
+            }, 5000); // Check every 5 seconds
+          }
+
+          // Add transceivers with preferences for quality
+          const videoTransceiver = peerConnection.addTransceiver('video', { direction: 'sendrecv' });
+          const audioTransceiver = peerConnection.addTransceiver('audio', { direction: 'sendrecv' });
+          
+          // Try to set codec preferences for better quality
+          if (videoTransceiver.setCodecPreferences) {
+            const capabilities = RTCRtpReceiver.getCapabilities('video');
+            if (capabilities) {
+              // Prefer VP9 or H.264 for better quality
+              const preferredCodecs = capabilities.codecs.filter(c => 
+                c.mimeType.includes('VP9') || c.mimeType.includes('H264')
+              );
+              if (preferredCodecs.length > 0) {
+                try {
+                  videoTransceiver.setCodecPreferences(preferredCodecs);
+                  console.log('🎭 Set preferred video codecs:', preferredCodecs.map(c => c.mimeType));
+                } catch (e) {
+                  console.log('Could not set codec preferences:', e);
+                }
+              }
+            }
+          }
 
           console.log('🎭 Avatar: Creating AvatarSynthesizer...');
           avatarSynthesizer = new sdk.AvatarSynthesizer(speechConfig, avatarConfig);
@@ -1850,6 +2218,11 @@
         console.log('🎭➡️ speakWithAvatar called with:', text.substring(0, 60) + '...');
         console.log('📊 isAvatarVideoDisplaying:', isAvatarVideoDisplaying);
         
+        // SET SPEAKING STATE IMMEDIATELY - before any checks or early returns
+        // This prevents user speech from being sent to LLM while AI processes
+        isSpeaking = true;
+        setAISpeaking(true); // Also set visual state
+        
         // CRITICAL CHECK: Only use avatar if the video is actually displaying
         if (!isAvatarVideoDisplaying) {
           console.log('⚠️🔄 SWITCH TO TTS: Avatar video is NOT displaying');
@@ -1906,6 +2279,7 @@
             // Let the avatarEventReceived handler manage the speaking state
             // Add a small delay then check if still speaking
             setTimeout(() => {
+              isSpeaking = false;
               setAISpeaking(false);
               avatarStatus.textContent = 'Ready';
             }, 500);
@@ -1917,6 +2291,7 @@
             console.log('📢 Cancellation reason:', cancellation.reason);
             console.log('📢 Error details:', cancellation.errorDetails);
             isAvatarVideoDisplaying = false; // Mark avatar as not working
+            isSpeaking = false;
             setAISpeaking(false);
             avatarStatus.textContent = 'Error';
             showToast('Avatar error, using audio', 2000);
@@ -1925,6 +2300,7 @@
             // Other result - might still be working
             console.log('🎭 Avatar: Unexpected result reason:', result.reason, '- assuming success');
             setTimeout(() => {
+              isSpeaking = false;
               setAISpeaking(false);
               avatarStatus.textContent = 'Ready';
             }, 500);
@@ -1934,6 +2310,7 @@
           console.log('⚠️🔄 SWITCH TO TTS: Avatar threw an error');
           console.log('📢 Error:', error);
           isAvatarVideoDisplaying = false; // Mark avatar as not working
+          isSpeaking = false;
           setAISpeaking(false);
           avatarStatus.textContent = 'Error';
           showToast('Avatar error, using audio', 2000);
@@ -1943,7 +2320,6 @@
 
       // Regular TTS fallback
       let speechSynthesizer = null;
-      let isSpeaking = false;
       
       async function speakWithTTS(text) {
         console.log('🔊📢 speakWithTTS called - AUDIO ONLY MODE');
@@ -2030,33 +2406,58 @@
       // End call button
       document.getElementById('endCall').onclick = async () => {
         if (confirm('Are you sure you want to end the interview?')) {
-          stopAvatar();
-          if (recognizer) {
-            recognizer.stopContinuousRecognitionAsync();
-          }
-          clearInterval(meetingTimer);
-          
-          // Stop video recording and upload
-          stopVideoRecording();
-          
-          // Mark interview as complete on backend (this also saves transcript)
-          if (interviewSessionId) {
-            try {
-              await fetch(`${API_BASE}/api/admin/interviews/${interviewSessionId}/complete`, {
-                method: 'POST'
-              });
-            } catch (e) {
-              console.log('Failed to mark interview complete:', e);
-            }
-          }
-          
-          showToast('Thank you for completing the interview! You will be contacted with results.', 5000);
+          await endInterview('manual');
           setupOverlay.classList.remove('hidden');
           meetingStartTime = null;
         }
       };
 
       // ============ Speech Recognition Functions ============
+
+      // Common interruption phrases that are NOT answers
+      const interruptionPhrases = [
+        'wait', 'hold on', 'stop', 'pause', 'one moment', 'one second', 'one minute',
+        'hang on', 'hold up', 'just a moment', 'just a second', 'just a minute',
+        'let me think', 'give me a moment', 'give me a second', 'give me a minute',
+        'slow down', 'too fast', 'can you repeat', 'repeat that', 'say that again',
+        'what was that', 'sorry', 'excuse me', 'um', 'uh', 'hmm', 'okay wait',
+        'wait wait', 'hold on hold on', 'stop stop', 'no no', 'actually wait',
+        'wait a minute', 'wait a second', 'hold that thought', 'before you continue',
+        'can i ask', 'quick question', 'i have a question', 'can you clarify'
+      ];
+
+      // Check if speech is just an interruption phrase (not an actual answer)
+      function isInterruptionPhrase(text) {
+        const normalizedText = text.toLowerCase().trim();
+        
+        // Check exact matches or starts with common interruptions
+        for (const phrase of interruptionPhrases) {
+          if (normalizedText === phrase || 
+              normalizedText.startsWith(phrase + ' ') ||
+              normalizedText.startsWith(phrase + '.') ||
+              normalizedText.startsWith(phrase + ',') ||
+              normalizedText.startsWith(phrase + '?')) {
+            return true;
+          }
+        }
+        
+        // If it's very short (< 4 words) and contains interrupt keywords, it's likely an interruption
+        const wordCount = normalizedText.split(/\s+/).length;
+        if (wordCount <= 4) {
+          const interruptKeywords = ['wait', 'stop', 'hold', 'pause', 'moment', 'second', 'minute', 'think', 'repeat'];
+          for (const keyword of interruptKeywords) {
+            if (normalizedText.includes(keyword)) {
+              return true;
+            }
+          }
+        }
+        
+        return false;
+      }
+
+      // Store speech that might be an answer (captured during/after interruption)
+      let pendingUserSpeech = null;
+      let wasInterrupted = false;
 
       startBtn.onclick = async () => {
         statusSpan.textContent = 'Connecting...';
@@ -2070,9 +2471,30 @@
         const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
         recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
 
+        // Track if we've already interrupted to avoid multiple interrupts
+        let hasInterruptedCurrentSpeech = false;
+
         recognizer.recognizing = (s, e) => {
-          transcriptDiv.innerText = e.result.text;
+          const partialText = e.result.text.trim();
+          transcriptDiv.innerText = partialText;
           setUserSpeaking(true);
+          
+          // Check if AI is currently speaking and user starts talking
+          if (aiTile.classList.contains('speaking') && partialText.length > 2 && !hasInterruptedCurrentSpeech) {
+            console.log('🎤🛑 User interrupted AI! Detected:', partialText);
+            hasInterruptedCurrentSpeech = true;
+            
+            // Stop AI speech immediately (voice interrupt = true)
+            interruptAISpeech(true);
+            
+            // Show that AI is now listening
+            showToast('👂 Listening...', 2000);
+            
+            // Reset interrupt flag after a short delay
+            setTimeout(() => {
+              hasInterruptedCurrentSpeech = false;
+            }, 3000);
+          }
         };
 
         recognizer.recognized = (s, e) => {
@@ -2087,6 +2509,52 @@
               return;
             }
             
+            // ⚠️ Check if this is just an interruption phrase
+            if (isInterruptionPhrase(text)) {
+              console.log('🎤🛑 Detected interruption phrase (not an answer):', text);
+              wasInterrupted = true;
+              
+              // If AI was speaking, it's already been interrupted
+              // Just acknowledge and wait for the actual answer
+              if (!isSpeaking && !aiTile.classList.contains('speaking')) {
+                // AI already stopped - let user know we're ready
+                showToast('👂 Go ahead, I\'m listening...', 2500);
+                avatarStatus.textContent = 'Listening...';
+                aiTile.classList.add('listening');
+                setTimeout(() => aiTile.classList.remove('listening'), 4000);
+              }
+              return; // Don't send interruption phrase to LLM
+            }
+            
+            // ⚠️ CRITICAL: Don't process speech while AI is speaking!
+            // This prevents user interruptions from being treated as answers
+            if (aiTile.classList.contains('speaking') || isSpeaking) {
+              console.log('🎤⏸️ AI is speaking - checking if this is an answer or interruption');
+              
+              // Check if this looks like an actual answer (longer, substantive)
+              const wordCount = text.split(/\s+/).length;
+              if (wordCount > 6) {
+                // This might be an actual answer - save it for after AI stops
+                console.log('🎤💾 Saving potential answer for later:', text);
+                pendingUserSpeech = text;
+                showToast('💭 Got it - will process your answer shortly...', 2000);
+              } else {
+                console.log('🎤⏸️ Short speech during AI - treating as interruption');
+              }
+              return; // Don't send to LLM while AI is talking
+            }
+            
+            // Check if we have pending speech from an interruption
+            if (pendingUserSpeech && wasInterrupted) {
+              console.log('🎤📤 Processing saved answer from interruption:', pendingUserSpeech);
+              // Use the saved speech if it's longer/more substantive
+              if (pendingUserSpeech.length > text.length) {
+                text = pendingUserSpeech;
+              }
+              pendingUserSpeech = null;
+              wasInterrupted = false;
+            }
+            
             const answerReceivedTime = Date.now();
             transcriptDiv.innerText = text;
             console.log('🎤 Recognized speech:', text);
@@ -2095,6 +2563,12 @@
             const currentQuestion = questionDiv.innerText;
 
             setTimeout(async () => {
+              // Double-check AI is not speaking before sending
+              if (aiTile.classList.contains('speaking') || isSpeaking) {
+                console.log('🎤⏸️ AI started speaking - aborting LLM call');
+                return;
+              }
+              
               try {
                 console.log('📤 Sending to LLM...');
                 showToast('🤔 AI is thinking...');
