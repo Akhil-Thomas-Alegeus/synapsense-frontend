@@ -11,14 +11,23 @@ Interview Intelligence Platform - Frontend Application
    npm install
    ```
 
-2. **Run the server:**
+2. **Configure Azure Blob Storage (optional):**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Azure Storage credentials
+   ```
+   
+   See [AZURE_BLOB_STORAGE.md](./AZURE_BLOB_STORAGE.md) for detailed configuration.
+
+3. **Run the server:**
    ```bash
    npm start
    ```
 
-3. **Access the application:**
+4. **Access the application:**
    - Frontend: http://127.0.0.1:8080/
    - Admin Dashboard: http://127.0.0.1:8080/admin.html
+   - Azure Storage Test: http://127.0.0.1:8080/test-azure-storage.html
 
 ## 📦 Azure Deployment
 

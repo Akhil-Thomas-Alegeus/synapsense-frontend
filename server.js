@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+// Load environment variables from .env file
+require('dotenv').config();
+
 // Generate self-signed certificate
 function generateCertificate() {
   const { execSync } = require('child_process');
@@ -37,6 +40,21 @@ const http = require('http');
 const AZURE_BACKEND = 'https://synapsencebackend-dzceeafvbwgca8br.westus2-01.azurewebsites.net';
 
 const server = http.createServer((req, res) => {
+  // Serve config endpoint for Azure Blob Storage
+  if (req.url === '/config/azure-storage.json') {
+    res.writeHead(200, { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache'
+    });
+    res.end(JSON.stringify({
+      sasToken: process.env.AZURE_STORAGE_SAS_TOKEN || '',
+      blobUrl: process.env.AZURE_STORAGE_BLOB_URL || '',
+      accountName: process.env.AZURE_STORAGE_ACCOUNT_NAME || '',
+      containerName: process.env.AZURE_STORAGE_CONTAINER_NAME || ''
+    }));
+    return;
+  }
+
   // Proxy API requests to Azure backend
   if (req.url.startsWith('/api/')) {
     const targetUrl = AZURE_BACKEND + req.url;

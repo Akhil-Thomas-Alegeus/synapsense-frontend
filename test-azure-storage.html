@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azure Blob Storage Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #0078d4;
+      padding-bottom: 10px;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #0078d4;
+    }
+    button {
+      background: #0078d4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #005a9e;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    pre {
+      background: #272822;
+      color: #f8f8f2;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 400px;
+    }
+    .blob-list {
+      margin-top: 10px;
+    }
+    .blob-item {
+      background: white;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+    .blob-item:hover {
+      background: #f0f0f0;
+    }
+    input[type="text"] {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 300px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔵 Azure Blob Storage Test</h1>
+    
+    <div class="section">
+      <h2>Configuration</h2>
+      <button onclick="testLoadConfig()">Load Configuration</button>
+      <div id="configStatus"></div>
+      <pre id="configOutput"></pre>
+    </div>
+
+    <div class="section">
+      <h2>Get Blob URL</h2>
+      <input type="text" id="blobNameInput" placeholder="Enter blob name (e.g., video.webm)" value="test.webm">
+      <button onclick="testGetBlobUrl()">Get URL</button>
+      <div id="urlStatus"></div>
+      <pre id="urlOutput"></pre>
+    </div>
+
+    <div class="section">
+      <h2>List Blobs</h2>
+      <input type="text" id="prefixInput" placeholder="Optional prefix filter">
+      <button onclick="testListBlobs()">List Blobs</button>
+      <div id="listStatus"></div>
+      <div id="blobList" class="blob-list"></div>
+    </div>
+
+    <div class="section">
+      <h2>Download Blob</h2>
+      <input type="text" id="downloadBlobName" placeholder="Enter blob name to download">
+      <button onclick="testDownloadBlob()">Download</button>
+      <div id="downloadStatus"></div>
+    </div>
+
+    <div class="section">
+      <h2>Connection Test</h2>
+      <button onclick="testConnection()">Test Connection</button>
+      <div id="connectionStatus"></div>
+    </div>
+  </div>
+
+  <script src="/azure-blob-storage.js"></script>
+  <script>
+    async function testLoadConfig() {
+      const statusDiv = document.getElementById('configStatus');
+      const outputDiv = document.getElementById('configOutput');
+      
+      try {
+        statusDiv.innerHTML = '<div class="status info">Loading configuration...</div>';
+        const config = await azureBlobStorage.loadConfig();
+        
+        // Mask the SAS token for display
+        const displayConfig = {
+          ...config,
+          sasToken: config.sasToken ? '***masked***' : 'not set',
+          blobUrl: config.blobUrl || 'not set',
+          accountName: config.accountName || 'not set',
+          containerName: config.containerName || 'not set'
+        };
+        
+        statusDiv.innerHTML = '<div class="status success">✓ Configuration loaded successfully</div>';
+        outputDiv.textContent = JSON.stringify(displayConfig, null, 2);
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="status error">✗ Error: ${error.message}</div>`;
+        outputDiv.textContent = '';
+      }
+    }
+
+    async function testGetBlobUrl() {
+      const statusDiv = document.getElementById('urlStatus');
+      const outputDiv = document.getElementById('urlOutput');
+      const blobName = document.getElementById('blobNameInput').value;
+      
+      if (!blobName) {
+        statusDiv.innerHTML = '<div class="status error">Please enter a blob name</div>';
+        return;
+      }
+
+      try {
+        if (!azureBlobStorage.isConfigured()) {
+          await azureBlobStorage.loadConfig();
+        }
+        
+        const url = azureBlobStorage.getBlobUrl(blobName);
+        
+        statusDiv.innerHTML = '<div class="status success">✓ URL generated successfully</div>';
+        outputDiv.textContent = url;
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="status error">✗ Error: ${error.message}</div>`;
+        outputDiv.textContent = '';
+      }
+    }
+
+    async function testListBlobs() {
+      const statusDiv = document.getElementById('listStatus');
+      const listDiv = document.getElementById('blobList');
+      const prefix = document.getElementById('prefixInput').value;
+      
+      try {
+        statusDiv.innerHTML = '<div class="status info">Listing blobs...</div>';
+        listDiv.innerHTML = '';
+        
+        if (!azureBlobStorage.isConfigured()) {
+          await azureBlobStorage.loadConfig();
+        }
+        
+        const blobs = await azureBlobStorage.listBlobs(prefix);
+        
+        statusDiv.innerHTML = `<div class="status success">✓ Found ${blobs.length} blob(s)</div>`;
+        
+        if (blobs.length === 0) {
+          listDiv.innerHTML = '<div class="blob-item">No blobs found</div>';
+        } else {
+          listDiv.innerHTML = blobs.map(blob => `
+            <div class="blob-item">
+              <strong>${blob.name}</strong><br>
+              Size: ${(blob.contentLength / 1024).toFixed(2)} KB<br>
+              Type: ${blob.contentType || 'unknown'}<br>
+              Modified: ${blob.lastModified}<br>
+              <button onclick="copyToClipboard('${blob.url}')">Copy URL</button>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="status error">✗ Error: ${error.message}</div>`;
+        listDiv.innerHTML = '';
+      }
+    }
+
+    async function testDownloadBlob() {
+      const statusDiv = document.getElementById('downloadStatus');
+      const blobName = document.getElementById('downloadBlobName').value;
+      
+      if (!blobName) {
+        statusDiv.innerHTML = '<div class="status error">Please enter a blob name</div>';
+        return;
+      }
+
+      try {
+        statusDiv.innerHTML = '<div class="status info">Downloading blob...</div>';
+        
+        if (!azureBlobStorage.isConfigured()) {
+          await azureBlobStorage.loadConfig();
+        }
+        
+        const blob = await azureBlobStorage.downloadBlob(blobName);
+        
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = blobName.split('/').pop(); // Get filename from path
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        statusDiv.innerHTML = `<div class="status success">✓ Downloaded ${(blob.size / 1024).toFixed(2)} KB</div>`;
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="status error">✗ Error: ${error.message}</div>`;
+      }
+    }
+
+    async function testConnection() {
+      const statusDiv = document.getElementById('connectionStatus');
+      
+      try {
+        statusDiv.innerHTML = '<div class="status info">Testing connection...</div>';
+        
+        // Test 1: Load config
+        const config = await azureBlobStorage.loadConfig();
+        
+        // Test 2: Try to access the blob URL
+        const testUrl = `https://${config.accountName}.blob.core.windows.net/${config.containerName}?${config.sasToken}&restype=container&comp=list&maxresults=1`;
+        
+        const response = await fetch(testUrl);
+        
+        if (response.ok) {
+          statusDiv.innerHTML = `
+            <div class="status success">
+              ✓ Connection successful!<br>
+              Status: ${response.status} ${response.statusText}<br>
+              Account: ${config.accountName}<br>
+              Container: ${config.containerName}
+            </div>
+          `;
+        } else {
+          statusDiv.innerHTML = `
+            <div class="status error">
+              ✗ Connection failed<br>
+              Status: ${response.status} ${response.statusText}
+            </div>
+          `;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="status error">✗ Error: ${error.message}</div>`;
+      }
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('URL copied to clipboard!');
+      }).catch(err => {
+        alert('Failed to copy: ' + err);
+      });
+    }
+
+    // Auto-load config on page load
+    window.addEventListener('load', () => {
+      testLoadConfig();
+    });
+  </script>
+</body>
+</html>
