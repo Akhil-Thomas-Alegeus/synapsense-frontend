@@ -26,7 +26,7 @@
     if (isLocalhost) {
         // When running locally, you can switch between local backend and Azure backend
         // Set this to true to use Azure backend even when running frontend locally
-        const useAzureBackendLocally = false;
+        const useAzureBackendLocally = true;
         apiBaseUrl = useAzureBackendLocally ? BACKEND_URLS.azure : BACKEND_URLS.local;
     } else {
         // When deployed, always use Azure backend
